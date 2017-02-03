@@ -114,6 +114,7 @@ PyAPI_DATA(int) _Py_CheckRecursionLimit;
   } while(0);
 
 PyAPI_FUNC(const char *) PyEval_GetFuncName(PyObject *);
+PyAPI_FUNC(const char *) PyEval_GetModuleName(PyObject *);
 PyAPI_FUNC(const char *) PyEval_GetFuncDesc(PyObject *);
 
 PyAPI_FUNC(PyObject *) PyEval_GetCallStats(PyObject *);

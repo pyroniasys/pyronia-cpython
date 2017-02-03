@@ -17,6 +17,7 @@
 #include "opcode.h"
 #include "setobject.h"
 #include "structmember.h"
+#include "monitor.h"
 
 #include <ctype.h>
 
@@ -108,7 +109,7 @@ void dump_tsc(int opcode, int ticked, uint64 inst0, uint64 inst1,
 typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
 /** MSM: this is to keep track of the main module **/
-static PyCodeObject *main_mod;
+static PyCodeObject *main_mod = NULL;
 
 /* Forward declarations */
 #ifdef WITH_TSC
@@ -777,7 +778,11 @@ static int _Py_TracingPossible = 0;
 PyObject *
 PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
 {
-    main_mod = (PyCodeObject*)co;
+    // msm: capture the main module
+    if (main_mod == NULL) {
+        PyCodeObject* tmp = (PyCodeObject*)co;
+        main_mod = PyCode_New(tmp->co_argcount, tmp->co_kwonlyargcount, tmp->co_nlocals, tmp->co_stacksize, tmp->co_flags, tmp->co_code, tmp->co_consts, tmp->co_names, tmp->co_varnames, tmp->co_freevars, tmp->co_cellvars, tmp->co_filename, tmp->co_name, tmp->co_firstlineno, tmp->co_lnotab);
+    }
     return PyEval_EvalCodeEx(co,
                       globals, locals,
                       (PyObject **)NULL, 0,
@@ -4622,8 +4627,11 @@ PyEval_GetModuleName(PyObject *func)
         return PyEval_GetModuleName(PyMethod_GET_FUNCTION(func));
     else if (PyFunction_Check(func))
         return _PyUnicode_AsString(PyFunction_GET_MODULE(func));
-    else if (PyCFunction_Check(func))
-        return _PyUnicode_AsString(PyCFunction_GET_MODULE(func));
+    else if (PyCFunction_Check(func)) {
+        if (((PyCFunctionObject *)func)->m_module == NULL)
+            return "NULL";
+        return _PyUnicode_AsString(((PyCFunctionObject *)func)->m_module);
+    }
     else
         return func->ob_type->tp_name;
 }
@@ -4701,10 +4709,6 @@ call_function(PyObject ***pp_stack, int oparg
     PyObject *func = *pfunc;
     PyObject *x, *w;
 
-    if (!strncmp(PyEval_GetModuleName(func), "os", 2) && !strncmp(PyEval_GetFuncName(func), "system", 6)) {
-        printf("[msm] \n");
-    }
-
     /* Always dispatch PyCFunction first, because these are
        presumed to be the most frequent callable object.
     */
@@ -4737,6 +4741,10 @@ call_function(PyObject ***pp_stack, int oparg
             PyObject *callargs;
             callargs = load_args(pp_stack, na);
             if (callargs != NULL) {
+                 // msm: check if we're calling an external process
+                if (PyMonitor_ExtProcCheck(func, callargs)) {
+                    printf("[msm] here\n");
+                }
                 READ_TIMESTAMP(*pintr0);
                 C_TRACE(x, PyCFunction_Call(func,callargs,NULL));
                 READ_TIMESTAMP(*pintr1);

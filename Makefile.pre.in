@@ -392,6 +392,7 @@ PYTHON_OBJS=	\
 		Python/modsupport.o \
 		Python/mystrtoul.o \
 		Python/mysnprintf.o \
+		Python/monitor.o \
 		Python/peephole.o \
 		Python/pyarena.o \
 		Python/pyctype.o \
@@ -923,6 +924,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/methodobject.h \
 		$(srcdir)/Include/modsupport.h \
 		$(srcdir)/Include/moduleobject.h \
+		$(srcdir)/Include/monitor.h \
 		$(srcdir)/Include/namespaceobject.h \
 		$(srcdir)/Include/node.h \
 		$(srcdir)/Include/object.h \

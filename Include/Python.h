@@ -114,6 +114,7 @@
 #include "modsupport.h"
 #include "pythonrun.h"
 #include "pylifecycle.h"
+#include "monitor.h" // msm
 #include "ceval.h"
 #include "sysmodule.h"
 #include "intrcheck.h"
