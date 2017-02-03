@@ -107,6 +107,9 @@ void dump_tsc(int opcode, int ticked, uint64 inst0, uint64 inst1,
 
 typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
+/** MSM: this is to keep track of the main module **/
+static PyCodeObject *main_mod;
+
 /* Forward declarations */
 #ifdef WITH_TSC
 static PyObject * call_function(PyObject ***, int, uint64*, uint64*);
@@ -774,6 +777,7 @@ static int _Py_TracingPossible = 0;
 PyObject *
 PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
 {
+    main_mod = (PyCodeObject*)co;
     return PyEval_EvalCodeEx(co,
                       globals, locals,
                       (PyObject **)NULL, 0,
@@ -4612,6 +4616,19 @@ PyEval_GetFuncName(PyObject *func)
 }
 
 const char *
+PyEval_GetModuleName(PyObject *func)
+{
+    if (PyMethod_Check(func))
+        return PyEval_GetModuleName(PyMethod_GET_FUNCTION(func));
+    else if (PyFunction_Check(func))
+        return _PyUnicode_AsString(PyFunction_GET_MODULE(func));
+    else if (PyCFunction_Check(func))
+        return _PyUnicode_AsString(PyCFunction_GET_MODULE(func));
+    else
+        return func->ob_type->tp_name;
+}
+
+const char *
 PyEval_GetFuncDesc(PyObject *func)
 {
     if (PyMethod_Check(func))
@@ -4668,7 +4685,7 @@ if (tstate->use_tracing && tstate->c_profilefunc) { \
     } \
 } else { \
     x = call; \
-    }
+ }
 
 static PyObject *
 call_function(PyObject ***pp_stack, int oparg
@@ -4683,6 +4700,10 @@ call_function(PyObject ***pp_stack, int oparg
     PyObject **pfunc = (*pp_stack) - n - 1;
     PyObject *func = *pfunc;
     PyObject *x, *w;
+
+    if (!strncmp(PyEval_GetModuleName(func), "os", 2) && !strncmp(PyEval_GetFuncName(func), "system", 6)) {
+        printf("[msm] \n");
+    }
 
     /* Always dispatch PyCFunction first, because these are
        presumed to be the most frequent callable object.
