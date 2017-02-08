@@ -561,6 +561,8 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
 #ifdef WITH_THREAD
     int import_lock_held = 0;
 #endif
+    int use_shell = 0;
+    char *dev;
 
     if (!PyArg_ParseTuple(
             args, "OOpOOOiiiiiiiiiiO:fork_exec",
@@ -616,6 +618,16 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     if (!exec_array)
         goto cleanup;
 
+    // this is here in case we ever encounter a case in which
+    // subprocess.py passes us more than one executable
+    if (PySequence_Size(executable_list) > 1) {
+        printf("[msm] Got more than one executable: %d", PySequence_Size(executable_list));
+    }
+    else {
+        if (!strncmp(exec_array[0], "/bin/sh", 8))
+            use_shell = 1;
+    }
+
     /* Convert args and env into appropriate arguments for exec() */
     /* These conversions are done in the parent process to avoid allocating
        or freeing memory in the child process. */
@@ -639,10 +651,30 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         }
 
         argv = _PySequence_BytesToCharpArray(converted_args);
+
         Py_CLEAR(converted_args);
         Py_CLEAR(fast_args);
         if (!argv)
             goto cleanup;
+
+        // msm: If subprocess.py told us to the use the shell
+        // our actual device access command is in argv[2]
+        if(use_shell) {
+            dev = argv[2];
+        }
+        else {
+            dev = argv[0];
+        }
+
+        if (PyMonitor_DeviceCheck(1, dev)) {
+            printf("[msm] check passes\n");
+        }
+        else {
+            printf("[msm] check fails\n");
+            PyMonitor_Violation();
+            goto cleanup;
+        }
+
     }
 
     if (env_list != Py_None) {

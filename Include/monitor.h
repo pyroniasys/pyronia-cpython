@@ -9,7 +9,17 @@
 extern "C" {
 #endif
 
-PyAPI_FUNC(int) PyMonitor_ExtProcCheck(PyObject *func, PyObject *args);
+typedef struct _monitor_policy {
+    char *dev;
+} PyMonitorPolicy;
+
+void PyMonitor_Init(void);
+void PyMonitor_Free(void);
+int PyMonitor_SetDev(const char *d);
+char *PyMonitor_GetDev(void);
+int PyMonitor_ExtProcCheck(PyObject *func);
+int PyMonitor_DeviceCheck(int access_type, char *access_cmd);
+void PyMonitor_Violation(void);
 
 #ifdef __cplusplus
 }

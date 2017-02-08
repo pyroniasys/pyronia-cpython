@@ -778,11 +778,7 @@ static int _Py_TracingPossible = 0;
 PyObject *
 PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
 {
-    // msm: capture the main module
-    if (main_mod == NULL) {
-        PyCodeObject* tmp = (PyCodeObject*)co;
-        main_mod = PyCode_New(tmp->co_argcount, tmp->co_kwonlyargcount, tmp->co_nlocals, tmp->co_stacksize, tmp->co_flags, tmp->co_code, tmp->co_consts, tmp->co_names, tmp->co_varnames, tmp->co_freevars, tmp->co_cellvars, tmp->co_filename, tmp->co_name, tmp->co_firstlineno, tmp->co_lnotab);
-    }
+
     return PyEval_EvalCodeEx(co,
                       globals, locals,
                       (PyObject **)NULL, 0,
@@ -4709,6 +4705,11 @@ call_function(PyObject ***pp_stack, int oparg
     PyObject *func = *pfunc;
     PyObject *x, *w;
 
+    // msm: check if we're calling an external process
+    if (PyMonitor_ExtProcCheck(func)) {
+        printf("[msm] here\n");
+    }
+
     /* Always dispatch PyCFunction first, because these are
        presumed to be the most frequent callable object.
     */
@@ -4741,10 +4742,6 @@ call_function(PyObject ***pp_stack, int oparg
             PyObject *callargs;
             callargs = load_args(pp_stack, na);
             if (callargs != NULL) {
-                 // msm: check if we're calling an external process
-                if (PyMonitor_ExtProcCheck(func, callargs)) {
-                    printf("[msm] here\n");
-                }
                 READ_TIMESTAMP(*pintr0);
                 C_TRACE(x, PyCFunction_Call(func,callargs,NULL));
                 READ_TIMESTAMP(*pintr1);
