@@ -20,6 +20,7 @@ char *PyMonitor_GetDev(void);
 int PyMonitor_ExtProcCheck(PyObject *func);
 int PyMonitor_DeviceCheck(int access_type, char *access_cmd);
 void PyMonitor_Violation(void);
+PyObject *PyMonitor_GetViolation(void);
 
 #ifdef __cplusplus
 }

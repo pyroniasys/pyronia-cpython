@@ -51,9 +51,13 @@ char *PyMonitor_GetDev() {
 }
 
 void PyMonitor_Violation() {
-    PolicyViolation = PyErr_NewException("monitor.policyviolation", NULL, NULL);
+    PolicyViolation = PyErr_NewException("monitor.violation", NULL, NULL);
     Py_INCREF(PolicyViolation);
-    PyErr_SetString(PolicyViolation, "Monitor device policy violation");
+    PyErr_SetString(PolicyViolation, "Unauthorized access to device");
+}
+
+PyObject *PyMonitor_GetViolation() {
+    return PolicyViolation;
 }
 
 int PyMonitor_ExtProcCheck(PyObject *func) {
@@ -114,5 +118,6 @@ int PyMonitor_DeviceCheck(int access_type, char *access_cmd) {
         return 1;
     }
 
+    PyMonitor_Violation();
     return 0;
 }
