@@ -325,6 +325,11 @@ run_file(FILE *fp, const wchar_t *filename, PyCompilerFlags *p_cf)
     else
         filename_str = "<stdin>";
 
+    // msm: Let's set the device policy for now
+    if (!PyMonitor_Init(filename_str, "bash oscmds.sh")) {
+        return 1;
+    }
+
     run = PyRun_AnyFileExFlags(fp, filename_str, filename != NULL, p_cf);
     Py_XDECREF(bytes);
     return run != 0;

@@ -4289,11 +4289,27 @@ os_system_impl(PyObject *module, PyObject *command)
 {
     long result;
     char *bytes = PyBytes_AsString(command);
+
+    // msm: let's check our policy here before we proceed
+    // TODO: find a way to only do this check when we're not running
+    // python as part of the build
+    if (!strcmp(PyMonitor_GetAuth(), "../test/bell.py") && !PyMonitor_DeviceCheck(1, bytes)) {
+        printf("[msm] check fails\n");
+        goto out;
+    }
     Py_BEGIN_ALLOW_THREADS
     result = system(bytes);
     Py_END_ALLOW_THREADS
+
+out:
+    if (PyMonitor_IsViolation()) {
+        PyErr_Clear();
+        return 0;
+    }
     return result;
 }
+
+
 #endif
 #endif /* HAVE_SYSTEM */
 

@@ -4705,11 +4705,6 @@ call_function(PyObject ***pp_stack, int oparg
     PyObject *func = *pfunc;
     PyObject *x, *w;
 
-    // msm: check if we're calling an external process
-    if (PyMonitor_ExtProcCheck(func)) {
-        printf("[msm] here\n");
-    }
-
     /* Always dispatch PyCFunction first, because these are
        presumed to be the most frequent callable object.
     */

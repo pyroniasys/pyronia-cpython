@@ -775,7 +775,7 @@ cleanup:
     _enable_gc(need_to_reenable_gc, gc_module);
     Py_XDECREF(gc_module);
     // msm: let's return a dummy pid to make it seem like we did something
-    if (PyErr_ExceptionMatches(PyMonitor_GetViolation())) {
+    if (PyMonitor_IsViolation()) {
         PyErr_Clear(); // don't forget to clear the error
         return PyLong_FromPid(0);
     }

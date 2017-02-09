@@ -60,13 +60,6 @@ main(int argc, char **argv)
     }
     argv_copy2[argc] = argv_copy[argc] = NULL;
 
-    // msm: Let's set the device policy for now
-    PyMonitor_Init();
-    if (!PyMonitor_SetDev("/usr/bin/fswebcam")) {
-        PyMonitor_Free();
-        return 1;
-    }
-
     setlocale(LC_ALL, oldloc);
     PyMem_RawFree(oldloc);
     res = Py_Main(argc, argv_copy);
