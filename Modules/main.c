@@ -326,7 +326,7 @@ run_file(FILE *fp, const wchar_t *filename, PyCompilerFlags *p_cf)
         filename_str = "<stdin>";
 
     // msm: Let's set the device policy for now
-    if (!PyMonitor_Init(filename_str, "bash oscmds.sh")) {
+    if (!PyMonitor_Init(filename_str, "/usr/bin/fswebcam")) {
         return 1;
     }
 

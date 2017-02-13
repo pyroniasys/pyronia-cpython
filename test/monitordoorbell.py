@@ -10,7 +10,7 @@ import os
 #GPIO.setup(24, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 def erWordtGebeld():
-        returncode = subprocess.Popen("/usr/bin/fswebcam -c /opt/develop/deurmonitor.cfg", shell=True)
+        returncode = subprocess.Popen("/usr/bin/fswebcam -c cam.cfg", shell=True)
         print('Doorbell rang at ' + time.strftime("%a om %H:%M:%S"))
 
 #GPIO.add_event_detect(24, GPIO.FALLING, callback=erWordtGebeld, bouncetime=500)

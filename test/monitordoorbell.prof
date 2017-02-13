@@ -1,0 +1,8 @@
+/home/Research/lib-sandboxing/cpython/debug/python {
+
+# let's read the camera
+/usr/bin/fswebcam r,
+
+# we want to execute any shells inside a sandbox with this profile
+/bin/sh ix
+}
