@@ -666,7 +666,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
             dev = argv[0];
         }
 
-        if (!PyMonitor_DeviceCheck(1, dev)) {
+        if (!PyMonitor_DevicePolicyCheck(1, dev)) {
             printf("[msm] check fails\n");
             goto cleanup;
         }
@@ -775,11 +775,7 @@ cleanup:
     _enable_gc(need_to_reenable_gc, gc_module);
     Py_XDECREF(gc_module);
     // msm: let's return a dummy pid to make it seem like we did something
-    if (PyMonitor_IsViolation()) {
-        PyErr_Clear(); // don't forget to clear the error
-        return PyLong_FromPid(0);
-    }
-    return NULL;
+    return PyMonitor_CheckViolation(PyLong_FromPid(0), NULL);
 }
 
 

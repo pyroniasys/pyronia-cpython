@@ -23,9 +23,9 @@ int PyMonitor_Init(const char *auth, const char *dev);
 void PyMonitor_Free(void);
 char *PyMonitor_GetAuth(void);
 char *PyMonitor_GetDev(void);
-int PyMonitor_DeviceCheck(int access_type, char *access_cmd);
+int PyMonitor_DevicePolicyCheck(int access_type, char *access_cmd);
 void PyMonitor_Violation(void);
-int PyMonitor_IsViolation(void);
+void *PyMonitor_CheckViolation(void *dummy_result, void *result);
 
 #ifdef __cplusplus
 }

@@ -108,9 +108,6 @@ void dump_tsc(int opcode, int ticked, uint64 inst0, uint64 inst1,
 
 typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
-/** MSM: this is to keep track of the main module **/
-static PyCodeObject *main_mod = NULL;
-
 /* Forward declarations */
 #ifdef WITH_TSC
 static PyObject * call_function(PyObject ***, int, uint64*, uint64*);

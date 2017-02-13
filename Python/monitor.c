@@ -59,14 +59,22 @@ void PyMonitor_Violation() {
     PyErr_SetString(PolicyViolation, "Unauthorized access to device");
 }
 
-int PyMonitor_IsViolation() {
+/* Checks whether a device policy violation was raised and returns a dummy
+ * result if it was, and returns the actual result set by the function
+ * otherwise. If a policy violation is raised, the error number is
+ * cleared to avoid propagating the error to the interpreter, which in
+ * turn allows the main program to continue executing.
+ */
+void *PyMonitor_CheckViolation(void *dummy_result, void *result) {
     if (PyErr_ExceptionMatches(PolicyViolation)) {
-        return 1;
+        PyErr_Clear();
+        return dummy_result;
     }
-    return 0;
+
+    return result;
 }
 
-int PyMonitor_DeviceCheck(int access_type, char *access_cmd) {
+int PyMonitor_DevicePolicyCheck(int access_type, char *access_cmd) {
     if (policy->dev == NULL) {
         return 0;
     }

@@ -4287,13 +4287,13 @@ static long
 os_system_impl(PyObject *module, PyObject *command)
 /*[clinic end generated code: output=290fc437dd4f33a0 input=86a58554ba6094af]*/
 {
-    long result;
+    long result, dummy;
     char *bytes = PyBytes_AsString(command);
 
     // msm: let's check our policy here before we proceed
     // TODO: find a way to only do this check when we're not running
     // python as part of the build
-    if (!strcmp(PyMonitor_GetAuth(), "../test/bell.py") && !PyMonitor_DeviceCheck(1, bytes)) {
+    if (!strcmp(PyMonitor_GetAuth(), "../test/bell.py") && !PyMonitor_DevicePolicyCheck(1, bytes)) {
         printf("[msm] check fails\n");
         goto out;
     }
@@ -4302,11 +4302,8 @@ os_system_impl(PyObject *module, PyObject *command)
     Py_END_ALLOW_THREADS
 
 out:
-    if (PyMonitor_IsViolation()) {
-        PyErr_Clear();
-        return 0;
-    }
-    return result;
+    dummy = 0;
+    return *((long *)PyMonitor_CheckViolation(&dummy, &result));
 }
 
 
