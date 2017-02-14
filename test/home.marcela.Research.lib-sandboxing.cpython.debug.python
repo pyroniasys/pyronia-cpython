@@ -1,0 +1,19 @@
+/home/marcela/Research/lib-sandboxing/cpython/debug/python {
+
+# allows reads from libc, libpthread and the linker cache
+/lib/x86_64-linux-gnu/libc-2.23.so r,
+/lib/x86_64-linux-gnu/libpthread-2.23.so r,
+/lib/x86_64-linux-gnu/libdl-2.23.so r,
+/lib/x86_64-linux-gnu/libutil-2.23.so r,
+/lib/x86_64-linux-gnu/libm-2.23.so r,
+/etc/ld.so.cache r,
+
+# allow reads from the python stdlib
+/home/marcela/Research/lib-sandboxing/cpython/Lib/encodings/__pycache__/*.cpython-35.pyc r,
+
+# let's read the camera
+/usr/bin/fswebcam ix,
+
+# we want to execute any shells inside a sandbox with this profile
+/bin/sh ix,
+}
