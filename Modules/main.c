@@ -195,6 +195,7 @@ static int RunModule(wchar_t *modname, int set_argv0)
         Py_DECREF(runmodule);
         return -1;
     }
+    printf("[msm] hey, someone is trying to run a module: %s\n", _PyUnicode_AsString(module));
     // msm: Let's set the device policy for now
     if (!PyMonitor_Init(_PyUnicode_AsString(module), "/usr/bin/fswebcam")) {
         return 1;
@@ -290,6 +291,7 @@ run_command(wchar_t *command, PyCompilerFlags *cf)
     Py_DECREF(unicode);
     if (bytes == NULL)
         goto error;
+    printf("[msm] hey, someone is trying to run a command: %s\n", _PyUnicode_AsString(unicode));
     ret = PyRun_SimpleStringFlags(PyBytes_AsString(bytes), cf);
     Py_DECREF(bytes);
     return ret != 0;
@@ -722,15 +724,18 @@ Py_Main(int argc, wchar_t **argv)
     }
 
     if (command) {
+        printf("[msm] run command\n");
         sts = run_command(command, &cf);
         PyMem_RawFree(command);
     } else if (module) {
+        printf("[msm] run module\n");
         sts = (RunModule(module, 1) != 0);
     }
     else {
 
         if (filename == NULL && stdin_is_interactive) {
             Py_InspectFlag = 0; /* do exit on SystemExit */
+            printf("[msm] interactive\n");
             RunStartupFile(&cf);
             RunInteractiveHook();
         }
@@ -739,6 +744,7 @@ Py_Main(int argc, wchar_t **argv)
         sts = -1;               /* keep track of whether we've already run __main__ */
 
         if (filename != NULL) {
+            printf("[msm] run from interpreter\n");
             sts = RunMainFromImporter(filename);
         }
 
@@ -783,8 +789,10 @@ Py_Main(int argc, wchar_t **argv)
             }
         }
 
-        if (sts == -1)
+        if (sts == -1) {
+            printf("[msm] run file\n");
             sts = run_file(fp, filename, &cf);
+        }
     }
 
     /* Check this environment variable at the end, to give programs the
@@ -801,6 +809,7 @@ Py_Main(int argc, wchar_t **argv)
         Py_InspectFlag = 0;
         RunInteractiveHook();
         /* XXX */
+        printf("[msm] run any file flags\n");
         sts = PyRun_AnyFileFlags(stdin, "<stdin>", &cf) != 0;
     }
 

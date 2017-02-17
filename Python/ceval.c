@@ -4630,6 +4630,22 @@ PyEval_GetModuleName(PyObject *func)
 }
 
 const char *
+PyEval_GetFileName(PyObject *func)
+{
+    if (PyMethod_Check(func))
+        return PyEval_GetFileName(PyMethod_GET_FUNCTION(func));
+    else if (PyFunction_Check(func))
+        return _PyUnicode_AsString(((PyCodeObject *)PyFunction_GetCode(func))->co_filename);
+    else if (PyCFunction_Check(func)) {
+        if (((PyCFunctionObject *)func)->m_module == NULL)
+            return "NULL";
+        return _PyUnicode_AsString(((PyCFunctionObject *)func)->m_module);
+    }
+    else
+        return func->ob_type->tp_name;
+}
+
+const char *
 PyEval_GetFuncDesc(PyObject *func)
 {
     if (PyMethod_Check(func))
