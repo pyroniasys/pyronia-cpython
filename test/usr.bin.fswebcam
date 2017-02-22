@@ -1,0 +1,23 @@
+/usr/bin/fswebcam {
+
+# allows reads from libc, lib and the linker cache
+/lib/x86_64-linux-gnu/lib*.so r,
+/lib/x86_64-linux-gnu/lib*.so.* r,
+/usr/lib/x86_64-linux-gnu/lib*.so.* r,
+/etc/ld.so.cache r,
+
+# allow reads from font config
+/etc/fonts/fonts.conf r,
+
+# allow read to camera config, and write to the output file
+/home/marcela/Research/lib-sandboxing/cpython/test/cam.cfg r,
+/var/tmp/deurbel.jpg w,
+
+# allow read/write camera interface
+/dev/video0 rw,
+
+#
+
+# we want to execute any shells inside a sandbox with this profile
+/bin/sh ix,
+}
