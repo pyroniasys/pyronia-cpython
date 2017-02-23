@@ -17,7 +17,7 @@ print("Button Pressed")
 #Get FileName
 now = time.strftime("Date%m-%d-%yTime%H-%M-%S")
 #Make command to run OCMMDS
-command = "bash oscmds.sh " +  str(now)
+command = "bash /home/marcela/Research/lib-sandboxing/cpython/test/oscmds.sh " +  str(now)
 
 # -- OSMC.sh is an Shell script that
 # -- is responsible for taking the picture and

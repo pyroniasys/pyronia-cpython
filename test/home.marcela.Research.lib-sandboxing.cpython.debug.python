@@ -1,0 +1,40 @@
+/home/marcela/Research/lib-sandboxing/cpython/debug/python {
+
+# allows reads from libc, lib and the linker cache
+/lib/x86_64-linux-gnu/lib*.so r,
+/lib/x86_64-linux-gnu/lib*.so.* r,
+/usr/lib/x86_64-linux-gnu/lib*.so.* r,
+/etc/ld.so.cache r,
+/usr/lib/locale/locale-archive r,
+/usr/lib/x86_64-linux-gnu/gconv/gconv-modules.cache r,
+/usr/share/zoneinfo/posixrules r,
+/home/marcela/Research/lib-sandboxing/cpython/Lib/ r,
+/home/marcela/Research/lib-sandboxing/cpython/Lib/* r,
+/home/marcela/Research/lib-sandboxing/cpython/Lib/*/ r,
+/home/marcela/Research/lib-sandboxing/cpython/Lib/*/*/* r,
+/home/marcela/Research/lib-sandboxing/cpython/Lib/*/* r,
+/home/marcela/Research/lib-sandboxing/cpython/Lib/plat-linux/ r,
+/home/marcela/Research/lib-sandboxing/cpython/debug/pybuilddir.txt r,
+/home/marcela/Research/lib-sandboxing/cpython/debug/build/lib.linux-x86_64-3.5/ r,
+/home/marcela/Research/lib-sandboxing/cpython/debug/build/lib.linux-x86_64-3.5/* r,
+/home/marcela/Research/lib-sandboxing/cpython/debug/build/lib.linux-x86_64-3.5/*/* r,
+/home/marcela/Research/lib-sandboxing/cpython/test/ r,
+/home/marcela/Research/lib-sandboxing/cpython/test/*.py r,
+/bin/dash cx,
+
+profile /bin/dash {
+	/lib/x86_64-linux-gnu/lib*.so r,
+	/lib/x86_64-linux-gnu/lib*.so.* r,
+	/lib/x86_64-linux-gnu/ld-*.so r,
+	/usr/lib/x86_64-linux-gnu/lib*.so.* r,
+	/etc/ld.so.cache r,
+	/usr/lib/locale/locale-archive r,
+	/usr/lib/x86_64-linux-gnu/gconv/gconv-modules.cache r,
+
+	/bin/dash r,
+	/bin/bash ix,
+	/home/marcela/Research/lib-sandboxing/cpython/test/oscmds.sh r,
+	/usr/bin/fswebcam rpx,
+}
+
+}

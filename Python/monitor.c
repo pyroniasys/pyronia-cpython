@@ -82,9 +82,10 @@ int PyMonitor_DevicePolicyCheck(int access_type, char *access_cmd) {
     // this checks if the beginning of the access command matches
     // TODO: make sure this is sound
     if (!strncmp(policy->dev, access_cmd, strlen(policy->dev))) {
-        return 1;
+      return 1;
     }
 
+    printf("[msm] policy: %s, given cmd: %s\n", policy->dev, access_cmd);
     PyMonitor_Violation();
     return 0;
 }
