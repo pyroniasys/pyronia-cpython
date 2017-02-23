@@ -6,9 +6,16 @@
 #include "Python.h"
 
 static PyMonitorPolicy *policy;
-static PyObject * PolicyViolation;
+static PyObject *PolicyViolation;
+static int is_build; // don't do monitoring if we're building python
 
 int PyMonitor_Init(const char *auth, const char *d) {
+    // fail if we already have a policy
+    if (policy) {
+        // we don't want to lose the existing policy, so don't free
+        return 0;
+    }
+
     policy = (PyMonitorPolicy *)PyMem_RawMalloc(sizeof(PyMonitorPolicy));
 
     if (policy == NULL) {
@@ -31,6 +38,16 @@ int PyMonitor_Init(const char *auth, const char *d) {
     }
 
     memcpy(policy->dev, d, strlen(d)+1);
+
+    printf("[msm] policy->auth = %s\n", policy->auth);
+
+    // let's check if this is being called as part of our python build
+    if (!strcmp(policy->auth, "../setup.py") || !strcmp(policy->auth, "sysconfig")) {
+        is_build = 1;
+    }
+    else {
+        is_build = 0;
+    }
 
     return 1;
 
@@ -75,8 +92,13 @@ void *PyMonitor_CheckViolation(void *dummy_result, void *result) {
 }
 
 int PyMonitor_DevicePolicyCheck(int access_type, char *access_cmd) {
+    // don't actually monitor python during the build process
+    if (is_build)
+        return 1;
+
     if (policy->dev == NULL) {
-        return 0;
+        // TODO: set an error here
+        goto out;
     }
 
     // this checks if the beginning of the access command matches
@@ -85,7 +107,8 @@ int PyMonitor_DevicePolicyCheck(int access_type, char *access_cmd) {
       return 1;
     }
 
-    printf("[msm] policy: %s, given cmd: %s\n", policy->dev, access_cmd);
     PyMonitor_Violation();
+
+ out:
     return 0;
 }

@@ -10,7 +10,7 @@ import os
 #GPIO.setup(24, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 def erWordtGebeld():
-        returncode = subprocess.Popen("/usr/bin/fswebcam -c /home/marcela/Research/lib-sandboxing/cpython/test/cam.cfg", shell=True)
+        os.spawnlpe(os.P_WAIT, "/usr/bin/fswebcam", "/usr/bin/fswebcam", "-c", "/home/marcela/Research/lib-sandboxing/cpython/test/testlib.py", {"PATH": "/usr/bin"})
         print('Doorbell rang at ' + time.strftime("%a om %H:%M:%S"))
 
 #GPIO.add_event_detect(24, GPIO.FALLING, callback=erWordtGebeld, bouncetime=500)

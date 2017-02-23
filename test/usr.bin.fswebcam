@@ -6,9 +6,12 @@
 /usr/lib/x86_64-linux-gnu/lib*.so.* r,
 /lib/x86_64-linux-gnu/ld-*.so r,
 /etc/ld.so.cache r,
+/usr/share/zoneinfo/posixrules r,
 
 # allow reads from font config
 /etc/fonts/fonts.conf r,
+/etc/fonts/conf.d** r,
+/usr/share/fonts** r,
 
 # allow read to camera config, and write to the output file
 /usr/bin/fswebcam r,
@@ -17,8 +20,6 @@
 
 # allow read/write camera interface
 /dev/video0 rw,
-
-#
 
 # we want to execute any shells inside a sandbox with this profile
 /bin/sh ix,

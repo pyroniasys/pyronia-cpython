@@ -195,6 +195,10 @@ static int RunModule(wchar_t *modname, int set_argv0)
         Py_DECREF(runmodule);
         return -1;
     }
+    // msm: Let's set the device policy for now
+    if (!PyMonitor_Init(_PyUnicode_AsString(module), "/usr/bin/fswebcam")) {
+        return 1;
+    }
     runargs = Py_BuildValue("(Oi)", module, set_argv0);
     if (runargs == NULL) {
         fprintf(stderr,

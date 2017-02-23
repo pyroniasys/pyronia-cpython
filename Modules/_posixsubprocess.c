@@ -667,7 +667,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         }
 
         if (!PyMonitor_DevicePolicyCheck(1, dev)) {
-            printf("[msm] check fails\n");
+            printf("[msm] subprocess check fails\n");
             goto cleanup;
         }
 
