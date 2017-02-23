@@ -1,0 +1,14 @@
+profile subbash {
+                /lib/x86_64-linux-gnu/lib*.so r,
+                /lib/x86_64-linux-gnu/lib*.so.* r,
+                /lib/x86_64-linux-gnu/ld-*.so r,
+                /usr/lib/x86_64-linux-gnu/lib*.so.* r,
+                /etc/ld.so.cache r,
+                /usr/lib/locale/locale-archive r,
+                /etc/locale.alias r,
+                /usr/lib/x86_64-linux-gnu/gconv/gconv-modules.cache r,
+
+                /bin/bash r,
+                /home/marcela/Research/lib-sandboxing/cpython/test/oscmds.sh r,
+                /usr/bin/fswebcam rpx,
+}

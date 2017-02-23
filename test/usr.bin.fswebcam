@@ -12,6 +12,7 @@
 /etc/fonts/fonts.conf r,
 /etc/fonts/conf.d** r,
 /usr/share/fonts** r,
+/var/cache/fontconfig/ w,
 
 # allow read to camera config, and write to the output file
 /usr/bin/fswebcam r,

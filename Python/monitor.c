@@ -107,6 +107,7 @@ int PyMonitor_DevicePolicyCheck(int access_type, char *access_cmd) {
       return 1;
     }
 
+    printf("[msm] policy: %s, bad access cmd: %s\n", policy->dev, access_cmd);
     PyMonitor_Violation();
 
  out:
