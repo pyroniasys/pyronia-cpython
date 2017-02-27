@@ -7,18 +7,42 @@
 #include "frameobject.h"
 #include "dictobject.h"
 
-static PyMonitorPolicy *policy;
+typedef struct _cg_node {
+    struct _cg_node *parent;
+
+    // points to a linked list of children
+    struct _cg_node *children;
+
+    // points to a linked list of siblings
+    struct _cg_node *siblings;
+
+    //const char *filename;
+    char *funcname;
+} cgNode;
+
+static PyMonitorPolicy *policy = NULL;
 static PyObject *PolicyViolation;
 static int is_build; // don't do monitoring if we're building python
 // keep track of our current execution context: caller and callee functions
-static PyObject *monitor_state;
+static PyObject *monitor_state = NULL;
+static cgNode *callgraph = NULL;
+static cgNode *cur_caller = NULL;
 
-// forward declaration
+// forward declarations
 static int tracer(PyObject *, PyFrameObject *, int, PyObject *);
+static int cgNode_new(cgNode **, cgNode *, /*const char *,*/ const char *);
+static void cgNode_dealloc(cgNode **);
 
 int PyMonitor_Init(const char *auth, const char *d) {
+    if (!strcmp(auth, "../setup.py") || !strcmp(auth, "sysconfig")) {
+        is_build = 1;
+        return 1;
+    }
+
+    is_build = 0;
+
     // fail if we already have a policy
-    if (policy) {
+    if (policy != NULL || callgraph != NULL) {
         // we don't want to lose the existing policy, so don't free
         return 0;
     }
@@ -29,6 +53,11 @@ int PyMonitor_Init(const char *auth, const char *d) {
         PyErr_NoMemory();
         return 0;
     }
+
+    if (cgNode_new(&callgraph, NULL, "root")) {
+        goto err;
+    }
+    cur_caller = callgraph;
 
     // let's start keeping track of the depth of our call graph
     PyDict_SetItemString(monitor_state, "depth", PyLong_FromLong(0));
@@ -60,15 +89,8 @@ int PyMonitor_Init(const char *auth, const char *d) {
 
     printf("[msm] policy->auth = %s\n", policy->auth);
 
-    // let's check if this is being called as part of our python build
-    if (!strcmp(policy->auth, "../setup.py") || !strcmp(policy->auth, "sysconfig")) {
-        is_build = 1;
-    }
-    else {
-        is_build = 0;
-        // set the profiler
-        PyEval_SetProfile(tracer, monitor_state);
-    }
+    // set the profiler
+    PyEval_SetProfile(tracer, monitor_state);
 
     return 1;
 
@@ -79,6 +101,9 @@ int PyMonitor_Init(const char *auth, const char *d) {
 
 void PyMonitor_Free() {
     PyEval_SetProfile(NULL, NULL);
+    PyDict_Clear(monitor_state);
+    Py_DECREF(monitor_state);
+    cgNode_dealloc(&callgraph);
     PyMem_Free(policy->auth);
     PyMem_Free(policy->dev);
     PyMem_RawFree(policy);
@@ -114,40 +139,19 @@ void *PyMonitor_CheckViolation(void *dummy_result, void *result) {
 }
 
 int PyMonitor_DevicePolicyCheck(int access_type, char *access_cmd) {
-<<<<<<< 5e5df33de2759d5fbdbd9e2108e283780bd25fde
     // don't actually monitor python during the build process
     if (is_build)
-        return 1;
-=======
-    char *cur_callee_filename;
-
-    // don't actually monitor python during the build process
-    if (is_build || monitor_state == NULL)
         goto out;
->>>>>>> Port tracer from iot-app-analysis/tracer
 
     if (policy->dev == NULL) {
         // TODO: set an error here
         goto out;
     }
 
-<<<<<<< 5e5df33de2759d5fbdbd9e2108e283780bd25fde
-    // this checks if the beginning of the access command matches
-    // TODO: make sure this is sound
-    if (!strncmp(policy->dev, access_cmd, strlen(policy->dev))) {
-      return 1;
-    }
-
-    printf("[msm] policy: %s, bad access cmd: %s\n", policy->dev, access_cmd);
-    PyMonitor_Violation();
-
- out:
-=======
     // this checks if the beginning of the access command matches the policy
     // if we're not in the authorized context, we have a problem
     // TODO: make sure pure string comp is sound
-    cur_callee_filename = _PyUnicode_AsString(PyDict_GetItemString(monitor_state, "cur-callee-filename"));
-    if (!strncmp(policy->dev, access_cmd, strlen(policy->dev)) && strncmp(cur_callee_filename, policy->auth, strlen(policy->auth))) {
+    if (!strncmp(policy->dev, access_cmd, strlen(policy->dev)) && strncmp("../test/monitordoorbell.py", policy->auth, strlen(policy->auth))) {
         //printf("[msm] %s:%s\n", _PyUnicode_AsString(caller_frame->f_code->co_filename), PyEval_GetFuncName(callee));
         PyMonitor_Violation();
         return 0;
@@ -157,15 +161,109 @@ out:
     return 1;
 }
 
+static int cgNode_new(cgNode **new, cgNode *p, /*const char *file,*/ const char *func) {
+    cgNode *node;
+
+    node = (cgNode *)PyMem_RawMalloc(sizeof(cgNode));
+
+    if (node == NULL) {
+        PyErr_NoMemory();
+        goto err;
+    }
+
+    node->parent = p;
+    node->children = NULL;
+    node->siblings = NULL;
+
+    /*
+    node->filename = PyMem_Malloc(strlen(file)+1);
+    if (!node->filename) {
+        PyErr_NoMemory();
+        goto err;
+    }
+
+    memcpy(node->filename, file, strlen(file)+1);
+    */
+
+    node->funcname = PyMem_Malloc(strlen(func)+1);
+    if (!node->funcname) {
+        PyErr_NoMemory();
+        goto err;
+    }
+
+    memcpy(node->funcname, func, strlen(func)+1);
+
+    *new = node;
+    return 0;
+err:
+    return 1;
+}
+
+static void cgNode_dealloc(cgNode **node) {
+    cgNode *n;
+    n = *node;
+
+    if (n->children == NULL && n->siblings == NULL) {
+        PyMem_Free(n->funcname);
+        PyMem_RawFree(n);
+        node = NULL;
+        return;
+    }
+    else if (n->children != NULL && n->siblings == NULL) {
+        cgNode_dealloc(&(n->children));
+    }
+    else if (n->children == NULL && n->siblings != NULL) {
+        cgNode_dealloc(&(n->siblings));
+    }
+    else {
+        cgNode_dealloc(&(n->children));
+        cgNode_dealloc(&(n->siblings));
+    }
+}
+
+static void cgNode_addChild(cgNode *node, cgNode *child) {
+    // the return value of this function reflects the success of AddChild()
+    if (node->children == NULL) {
+        node->children = child;
+        return;
+    }
+
+    cgNode *runner;
+
+    runner = node->children;
+    while (runner->siblings != NULL) {
+        runner = runner->siblings;
+    }
+
+    runner->siblings = child;
+}
+
+static cgNode *cgNode_findChild(cgNode *node, const char *name) {
+    cgNode *runner;
+
+    runner = node->children;
+    if (runner == NULL) {
+        goto out;
+    }
+
+    while (runner->siblings != NULL) {
+        if (!strcmp(runner->funcname, name))
+            break;
+
+        runner = runner->siblings;
+    }
+
+out:
+    return runner;
+}
+
 static int tracer(PyObject *self, PyFrameObject *frame, int what, PyObject *arg) {
     PyCodeObject *caller_code, *callee_code;
     const char *caller_name, *callee_name;
     long depth;
     PyObject *last_callers, *last_callees;
+    cgNode *cur_callee;
 
-    if (!PyDict_Check(self)) {
-        return -1;
-    }
     depth = PyLong_AsLong(PyDict_GetItemString(self, "depth"));
 
     if (what == PyTrace_CALL || what == PyTrace_C_CALL) {
@@ -176,6 +274,7 @@ static int tracer(PyObject *self, PyFrameObject *frame, int what, PyObject *arg)
         last_callees = PyDict_GetItemString(self, "last-callees");
 
         if (!PyDict_Check(last_callers) || !PyDict_Check(last_callees)) {
+            PyErr_BadInternalCall();
             return -1;
         }
 
@@ -188,6 +287,8 @@ static int tracer(PyObject *self, PyFrameObject *frame, int what, PyObject *arg)
             if (depth > 0){
                 printf("[msm] merp\n");
                 depth = 0;
+                // reset caller node to the root of the call graph
+                cur_caller = (cgNode *)callgraph;
             }
         }
 
@@ -201,7 +302,7 @@ static int tracer(PyObject *self, PyFrameObject *frame, int what, PyObject *arg)
             caller_name = _PyUnicode_AsString(caller_code->co_name);
         }
         else {
-            caller_name = "null";
+            caller_name = "root";
         }
 
         if (PyDict_GetItem(last_callers, PyLong_FromLong(depth)) == NULL) {
@@ -213,20 +314,31 @@ static int tracer(PyObject *self, PyFrameObject *frame, int what, PyObject *arg)
             caller_name = _PyUnicode_AsString(PyDict_GetItem(last_callees, PyLong_FromLong(depth-1)));
         }
 
+        //printf("[msm] caller_name: %s, node_name: %s\n", caller_name, cur_caller->funcname);
+
         if (what == PyTrace_C_CALL) {
             callee_name = PyEval_GetFuncName(arg);
-            printf("[msm] c_call: %s --> %s\n", caller_name, callee_name);
+            printf("[msm] c_call - ");
         }
         else {
             callee_name = _PyUnicode_AsString(callee_code->co_name);
-            printf("[msm] %s --> %s\n", caller_name, callee_name);
+            printf("[msm] ");
         }
 
-        // finally, let's update our monitor state
-        PyDict_SetItemString(self, "cur-caller", PyUnicode_FromString(caller_name));
-        PyDict_SetItemString(self, "cur-callee", PyUnicode_FromString(callee_name));
-        PyDict_SetItemString(self, "cur-callee-filename", callee_code->co_filename);
+        cur_callee = cgNode_findChild(cur_caller, callee_name);
+        if (cur_callee == NULL) {
+            if (cgNode_new(&cur_callee, cur_caller, callee_name)) {
+                return -1;
+            }
 
+            cgNode_addChild(cur_caller, cur_callee);
+            printf("(new callee) ");
+        }
+
+        printf("%s --> %s\n", cur_caller->funcname, cur_callee->funcname);
+
+        // finally, let's update our monitor state
+        cur_caller = cur_callee;
         depth++;
         PyDict_SetItem(last_callers, PyLong_FromLong(depth), PyUnicode_FromString(caller_name));
         PyDict_SetItem(last_callees, PyLong_FromLong(depth), PyUnicode_FromString(callee_name));
@@ -236,12 +348,13 @@ static int tracer(PyObject *self, PyFrameObject *frame, int what, PyObject *arg)
     }
     else if (what == PyTrace_RETURN || what == PyTrace_C_RETURN) {
         depth--;
+        cur_caller = cur_caller->parent;
+        printf("[msm] returning to %s\n", cur_caller->funcname);
     }
 
     // re-set the depth of the call graph (note: it might have not changed)
     PyDict_SetItemString(monitor_state, "depth", PyLong_FromLong(depth));
 
->>>>>>> Port tracer from iot-app-analysis/tracer
     return 0;
 
 }
