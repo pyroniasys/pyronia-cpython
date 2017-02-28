@@ -9,21 +9,12 @@
 extern "C" {
 #endif
 
-typedef struct _monitor_policy {
-    // the top-level authorized python module (i.e. the application)
-    // TODO: use the actual python module name, not the filename
-    char *auth;
-
-    // the device access policy
-    // TODO: create a struct for policy definitions
-    char *dev;
-} PyMonitorPolicy;
-
-int PyMonitor_Init(const char *auth, const char *dev);
+int PyMonitor_Init(const char *auth, const char *auth_func, const char *access_file, const char *access_func, const char *d);
 void PyMonitor_Free(void);
 char *PyMonitor_GetAuth(void);
 char *PyMonitor_GetDev(void);
 int PyMonitor_DevicePolicyCheck(int access_type, char *access_cmd);
+void PyMonitor_CheckSetAuthExecCtx(PyObject *func);
 void PyMonitor_Violation(void);
 void *PyMonitor_CheckViolation(void *dummy_result, void *result);
 

@@ -197,7 +197,7 @@ static int RunModule(wchar_t *modname, int set_argv0)
     }
     printf("[msm] hey, someone is trying to run a module: %s\n", _PyUnicode_AsString(module));
     // msm: Let's set the device policy for now
-    if (!PyMonitor_Init(_PyUnicode_AsString(module), "/usr/bin/fswebcam")) {
+    if (!PyMonitor_Init(_PyUnicode_AsString(module), "", "posix", "system", "/usr/bin/fswebcam")) {
         return 1;
     }
     runargs = Py_BuildValue("(Oi)", module, set_argv0);
@@ -332,7 +332,7 @@ run_file(FILE *fp, const wchar_t *filename, PyCompilerFlags *p_cf)
         filename_str = "<stdin>";
 
     // msm: Let's set the device policy for now
-    if (!PyMonitor_Init(filename_str, "bash")) {
+    if (!PyMonitor_Init(filename_str, "erWordtGebeld", "posix", "system", "/usr/bin/fswebcam")) {
         return 1;
     }
 

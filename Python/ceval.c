@@ -4681,6 +4681,7 @@ if (tstate->use_tracing && tstate->c_profilefunc) { \
         x = NULL; \
     } \
     else { \
+        PyMonitor_CheckSetAuthExecCtx(func); \
         x = call; \
         if (tstate->c_profilefunc != NULL) { \
             if (x == NULL) { \
@@ -4717,6 +4718,8 @@ call_function(PyObject ***pp_stack, int oparg
     PyObject **pfunc = (*pp_stack) - n - 1;
     PyObject *func = *pfunc;
     PyObject *x, *w;
+
+    PyMonitor_CheckSetAuthExecCtx(func);
 
     /* Always dispatch PyCFunction first, because these are
        presumed to be the most frequent callable object.
