@@ -2,4 +2,4 @@ import os
 
 import testlib
 
-print("Hello, world")
+os.system("echo Hello, world")
