@@ -13,3 +13,7 @@ attacklib.coolprint("hello, world")
 
 # this will actually use attacklib's os.system
 os.system("echo hello!")
+
+from attacklib_native import *
+
+native_print("YOOOOO")
