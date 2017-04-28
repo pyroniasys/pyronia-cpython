@@ -17,3 +17,7 @@ os.system("echo hello!")
 from attacklib_native import *
 
 native_print("YOOOOO")
+
+f = open("test.txt", "w+")
+f.write("test\n")
+f.close()

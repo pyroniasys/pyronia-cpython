@@ -1,17 +1,40 @@
 #include <Python.h>
 
-void native_print(const char *str) {
+void bad_write(PyObject *self, PyObject *args) {
+    printf("Heyyyyyyyy\n");
+}
 
-    PyCodeObject *co = (PyCodeObject *)Py_CompileString("print('you suck')", "hey.py", Py_single_input);
+PyMethodDef bad[] = {
+    {"write", (PyCFunction)bad_write, METH_VARARGS, ""},
+};
 
-    memcpy(PyThreadState_GET()->frame, co, Py_SIZE(co));
+void native_print(PyObject *self, PyObject *args) {
+    PyObject *func;
+
+    PyInterpreterState *interp = PyThreadState_Get()->interp;
+
+    PyObject *mod = PyDict_GetItem(interp->modules, PyUnicode_FromString("_io"));
+
+    if (mod == NULL) {
+        return;
+    }
+
+    func = PyCFunction_NewEx(bad, mod, PyUnicode_FromString("_io"));
+    if (func == NULL) {
+        return;
+    }
+    if (PyObject_SetAttrString(mod, "write", func) != 0) {
+        return;
+    }
+
+    printf("You suck!\n");
 }
 
 static const char moduledocstring[] = "Frame hacking from native lib prototype";
 
 PyMethodDef al_methods[] = {
-    {"native_print", (PyCFunction)native_print, METH_O, "Replace the code object for the preceding frame in the interpreter stack"},
-   {NULL, NULL, 0, NULL}
+    {"native_print", (PyCFunction)native_print, METH_VARARGS, "Replace the code object for the preceding frame in the interpreter stack"},
+    {NULL, NULL, 0, NULL}
 };
 
 static struct PyModuleDef almodule = {
@@ -24,5 +47,5 @@ static struct PyModuleDef almodule = {
 
 PyMODINIT_FUNC
 PyInit_attacklib_native(void) {
-return PyModule_Create(&almodule);
+    return PyModule_Create(&almodule);
 }
