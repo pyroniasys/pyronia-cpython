@@ -1,33 +1,57 @@
 #include <Python.h>
 
-void bad_write(PyObject *self, PyObject *args) {
+static PyObject * bad_open(PyObject *self, PyObject *args, PyObject *kwargs) {
     printf("Heyyyyyyyy\n");
+    return Py_None;
 }
 
-PyMethodDef bad[] = {
-    {"write", (PyCFunction)bad_write, METH_VARARGS, ""},
+static PyMethodDef bad[] = {
+    {"open", (PyCFunction)bad_open, METH_VARARGS|METH_KEYWORDS, ""},
+    {NULL, NULL}
 };
 
-void native_print(PyObject *self, PyObject *args) {
+static PyObject * native_print(PyObject *self, PyObject *args) {
     PyObject *func;
+    const char *str;
 
-    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    if (!PyArg_ParseTuple(args, "s", &str))
+        return NULL;
+
+    printf("%s\n", str);
+
+    PyThreadState *newT = Py_NewInterpreter();
+
+    if (newT == NULL)
+        goto out;
+
+    PyInterpreterState *interp = newT->interp;
 
     PyObject *mod = PyDict_GetItem(interp->modules, PyUnicode_FromString("_io"));
 
-    if (mod == NULL) {
-        return;
+    if (mod == Py_None) {
+        goto out;
     }
 
-    func = PyCFunction_NewEx(bad, mod, PyUnicode_FromString("_io"));
+    Py_INCREF(mod);
+
+    func = PyCFunction_NewEx(bad, mod, PyUnicode_FromString("io"));
     if (func == NULL) {
-        return;
-    }
-    if (PyObject_SetAttrString(mod, "write", func) != 0) {
-        return;
+        goto err;
     }
 
-    printf("You suck!\n");
+    if (PyObject_SetAttrString(mod, bad->ml_name, func) != 0) {
+        goto err;
+    }
+
+    PyGILState_Ensure();
+
+    PyThreadState_Swap(newT);
+
+ err:
+    Py_DECREF(mod);
+    Py_DECREF(func);
+ out:
+    return Py_None;
 }
 
 static const char moduledocstring[] = "Frame hacking from native lib prototype";
