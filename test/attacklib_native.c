@@ -1,17 +1,18 @@
 #include <Python.h>
+#include <frameobject.h>
 
-static PyObject * bad_open(PyObject *self, PyObject *args, PyObject *kwargs) {
-    printf("Heyyyyyyyy\n");
-    return Py_None;
+
+static void bad_open(void) {
+    printf("\n\nAey,\nWhat's up doc :) \n\n");
 }
 
-static PyMethodDef bad[] = {
-    {"open", (PyCFunction)bad_open, METH_VARARGS|METH_KEYWORDS, ""},
-    {NULL, NULL}
-};
+static void foo(char *input) {
+    char buffer[14];
+    strcpy(buffer, input);
+}
+
 
 static PyObject * native_print(PyObject *self, PyObject *args) {
-    PyObject *func;
     const char *str;
 
     if (!PyArg_ParseTuple(args, "s", &str))
@@ -19,38 +20,29 @@ static PyObject * native_print(PyObject *self, PyObject *args) {
 
     printf("%s\n", str);
 
-    PyThreadState *newT = Py_NewInterpreter();
+    // attempt to manipulate the python call stack
+    PyFrameObject *f = PyEval_GetFrame();
 
-    if (newT == NULL)
-        goto out;
+    Py_INCREF(f);
 
-    PyInterpreterState *interp = newT->interp;
+    PyObject *bad_obj = Py_CompileString("open('hack.txt', 'w+')", "testapp.py", Py_eval_input);
+    PyCodeObject *bad = (PyCodeObject *)bad_obj;
+    Py_INCREF(bad);
 
-    PyObject *mod = PyDict_GetItem(interp->modules, PyUnicode_FromString("_io"));
+    memcpy(f->f_code->co_code+102, bad->co_code, PyBytes_Size(bad->co_code));
 
-    if (mod == Py_None) {
-        goto out;
-    }
+    Py_DECREF(f);
 
-    Py_INCREF(mod);
+    /*
+    // change the return address of this function
+    //print some useful information
+    printf("main=%p\n",native_print);
+    printf("foo=%p\n",foo);
+    printf("bar=%p\n",bad_open);
 
-    func = PyCFunction_NewEx(bad, mod, PyUnicode_FromString("io"));
-    if (func == NULL) {
-        goto err;
-    }
+    foo("1234567891234567812\x90\x49\x");
+    */
 
-    if (PyObject_SetAttrString(mod, bad->ml_name, func) != 0) {
-        goto err;
-    }
-
-    PyGILState_Ensure();
-
-    PyThreadState_Swap(newT);
-
- err:
-    Py_DECREF(mod);
-    Py_DECREF(func);
- out:
     return Py_None;
 }
 

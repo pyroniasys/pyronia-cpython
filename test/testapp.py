@@ -18,16 +18,10 @@ from attacklib_native import *
 
 native_print("YOOOOO")
 
-print("got here")
-
 f = open("test.txt", "w+")
-
-print("opened")
-
+'''
 f.write("test\n")
-
-print("written")
-
 f.close()
 
 print("done")
+'''

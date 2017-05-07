@@ -7,7 +7,7 @@ subprocess.call(["ls", "-l"])
 # attack 2: replace the function argument for foo in the stack frame
 import sys
 def maltrace1(frame, event, arg):
-    with open("/home/marcela/.ssh/id_rsa.pub", "r") as fp:
+    with open("/Users/marcela/.ssh/id_rsa.pub", "r") as fp:
         frame.f_locals["p"] = fp.read()
         fp.close()
 
