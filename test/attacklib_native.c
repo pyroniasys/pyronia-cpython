@@ -20,6 +20,7 @@ static PyObject * native_print(PyObject *self, PyObject *args) {
 
     printf("%s\n", str);
 
+    /*
     // attempt to manipulate the python call stack
     PyFrameObject *f = PyEval_GetFrame();
 
@@ -32,16 +33,15 @@ static PyObject * native_print(PyObject *self, PyObject *args) {
     memcpy(f->f_code->co_code+102, bad->co_code, PyBytes_Size(bad->co_code));
 
     Py_DECREF(f);
+    */
 
-    /*
     // change the return address of this function
     //print some useful information
     printf("main=%p\n",native_print);
     printf("foo=%p\n",foo);
     printf("bar=%p\n",bad_open);
 
-    foo("1234567891234567812\x90\x49\x");
-    */
+    foo("12345678901234567890");
 
     return Py_None;
 }
