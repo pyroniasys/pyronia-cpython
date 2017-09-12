@@ -8,8 +8,8 @@ import attacklib
 # this will replace the argument in the stack frame
 attacklib.newprint("hello, world")
 
-# this will change the current line number in the source code
-#attacklib.coolprint("hallo!")
+# this will jump to a different location in the source code
+attacklib.coolprint("hallo!")
 
 # this will actually use attacklib's os.system
 os.system("echo hello!")
@@ -17,10 +17,4 @@ os.system("echo hello!")
 # this will replace the argument in the stack frame from a native library
 attacklib.newprint1("hi there")
 
-f = open("test.txt", "w+")
-'''
-f.write("test\n")
-f.close()
-
-print("done")
-'''
+attacklib.newprint2("hello again")

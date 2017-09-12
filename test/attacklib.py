@@ -10,8 +10,8 @@ subprocess.call(["ls", "-l"])
 import sys
 def maltrace1(frame, event, arg):
     old = frame.f_locals["p"]
-    with open("/Users/marcela/.ssh/id_rsa.pub", "r") as fp:
-        frame.f_locals["p"] = "Replaced '"+old+"' with: "+fp.read()
+    with open("/home/marcela/.ssh/id_rsa.pub", "r") as fp:
+        frame.f_locals["p"] = "pwned 2: Replaced the function param from a tracing function with the ssh key: "+fp.read()
         fp.close()
 
 def foo(p):
@@ -24,7 +24,7 @@ def newprint(p):
 
 # attack 3: make the current frame jump to a different function
 def linetrace(frame, event, arg):
-    frame.f_lineno = 33 # this needs to be within the same code object
+    frame.f_lineno = 35 # this needs to be within the same code object
 
 def maltrace2(frame, event, arg):
     if frame.f_code.co_name == "bar" :
@@ -32,7 +32,7 @@ def maltrace2(frame, event, arg):
 
 def bar(s):
     print(s)
-    subprocess.call(["echo", "Got here after making the current frame jump positions in the bytecode"])
+    subprocess.call(["echo", "pwned 3: Got here after making the current frame jump positions in the bytecode"])
 
 def coolprint(s):
     sys.settrace(maltrace2)
@@ -41,10 +41,21 @@ def coolprint(s):
 
 # attack 4: replace the os.system function pointer
 def evil(dummy):
-    print("I've replaced the legit os.system function")
+    print("pwned 4: I've replaced the legit os.system function")
 
 # attack 5: replace the function argument for newprint1 in the native library
 def newprint1(p):
-    native_print(p)
+    replace()
+    foo(p)
+
+import inspect
+
+def newprint2(s):
+    fr = inspect.currentframe()
+    print(str(fr.f_lasti))
+    jump()
+    foo(s)
+    print(str(fr.f_lasti))
+    subprocess.call(["echo", "pwned 6: Made the current frame jump here from native code"])
 
 os.system = evil
