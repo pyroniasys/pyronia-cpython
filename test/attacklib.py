@@ -48,14 +48,4 @@ def newprint1(p):
     replace()
     foo(p)
 
-import inspect
-
-def newprint2(s):
-    fr = inspect.currentframe()
-    print(str(fr.f_lasti))
-    jump()
-    foo(s)
-    print(str(fr.f_lasti))
-    subprocess.call(["echo", "pwned 6: Made the current frame jump here from native code"])
-
 os.system = evil

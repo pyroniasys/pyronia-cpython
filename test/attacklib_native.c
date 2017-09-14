@@ -286,22 +286,22 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     /* Finally set the new f_lineno and f_lasti and return OK. */
     f->f_lineno = new_lineno;
     f->f_lasti = new_lasti;
-    printf("%d!!\n", f->f_lasti);
     return 0;
 }
 
 static PyObject * jump_print(PyObject *self, PyObject *args) {
 
-    unsigned char *next_instr;
-    unsigned char *first_instr;
-
     PyFrameObject *f = PyEval_GetFrame();
     Py_INCREF(f);
 
     // Change the next line number in the frame to exec
-    if (frame_setlineno(f, PyLong_FromLong(56))) {
+    if (frame_setlineno(f, PyLong_FromLong(58))) {
         return NULL;
     }
+
+    // subtract 1, so the interpreter actually computes the
+    // correct next instruction at the next eval iteration
+    f->f_lasti--;
 
     Py_DECREF(f);
     Py_INCREF(Py_None);

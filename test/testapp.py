@@ -16,5 +16,3 @@ os.system("echo hello!")
 
 # this will replace the argument in the stack frame from a native library
 attacklib.newprint1("hi there")
-
-attacklib.newprint2("hello again")
