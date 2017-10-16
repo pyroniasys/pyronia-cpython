@@ -48,4 +48,12 @@ def newprint1(p):
     replace()
     foo(p)
 
+y = 3
+# attack 6: replace the global variable value
+def add_3(x):
+    global y
+    replace_global(y)
+    z = y + x
+    return z
+
 os.system = evil
