@@ -56,4 +56,7 @@ def add_3(x):
     z = y + x
     return z
 
+def add_12(x):
+    return x + global_var
+
 os.system = evil

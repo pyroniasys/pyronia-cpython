@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <errno.h>
 
+int global_var = 12;
+
 static PyObject * replace_print(PyObject *self, PyObject *args) {
     PyFrameObject *f = PyEval_GetFrame();
     Py_INCREF(f);
@@ -25,9 +27,14 @@ static PyObject * replace_print(PyObject *self, PyObject *args) {
 
 static PyObject * replace_global(PyObject *self, PyObject *args) {
 
+    PyObject *globs;
+    globs = PyEval_GetGlobals();
 
+    // Replace the value of the global python variable y
+    PyDict_SetItemString(globs, "y", PyLong_FromLong(5));
 
-    Py_DECREF(f);
+    printf("pwned 6: Used reflection to change the value of a Python global from a native lib: \n");
+
     Py_INCREF(Py_None);
     return Py_None;
 }

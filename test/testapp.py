@@ -17,4 +17,8 @@ os.system("echo hello!")
 # this will replace the argument in the stack frame from a native library
 attacklib.newprint1("hi there")
 
-attacklib.add_3()
+x = 3
+res = attacklib.add_3(x)
+print(str(x)+" + 3 = "+str(res))
+
+print(attacklib.add_12(x))
