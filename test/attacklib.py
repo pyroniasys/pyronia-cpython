@@ -43,6 +43,8 @@ def coolprint(s):
 def evil(dummy):
     print("pwned 4: I've replaced the legit os.system function")
 
+os.system = evil
+
 # attack 5: replace the function argument for newprint1 in the native library
 def newprint1(p):
     replace()
@@ -55,8 +57,3 @@ def add_3(x):
     replace_global(y)
     z = y + x
     return z
-
-def add_12(x):
-    return x + global_var
-
-os.system = evil

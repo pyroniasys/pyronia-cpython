@@ -6,8 +6,6 @@
 #include <unistd.h>
 #include <errno.h>
 
-int global_var = 12;
-
 static PyObject * replace_print(PyObject *self, PyObject *args) {
     PyFrameObject *f = PyEval_GetFrame();
     Py_INCREF(f);
@@ -26,7 +24,6 @@ static PyObject * replace_print(PyObject *self, PyObject *args) {
 }
 
 static PyObject * replace_global(PyObject *self, PyObject *args) {
-
     PyObject *globs;
     globs = PyEval_GetGlobals();
 
@@ -39,7 +36,7 @@ static PyObject * replace_global(PyObject *self, PyObject *args) {
     return Py_None;
 }
 
-static const char moduledocstring[] = "Frame hacking from native lib prototype";
+static const char moduledocstring[] = "Attacks from native lib prototype";
 
 PyMethodDef al_methods[] = {
     {"replace", (PyCFunction)replace_print, METH_VARARGS, "Replaces the value of the function arg with pwned"},
@@ -57,5 +54,7 @@ static struct PyModuleDef almodule = {
 
 PyMODINIT_FUNC
 PyInit_attacklib_native(void) {
-    return PyModule_Create(&almodule);
+    PyObject *mod = PyModule_Create(&almodule);
+
+    return mod;
 }
