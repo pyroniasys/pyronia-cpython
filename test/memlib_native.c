@@ -13,16 +13,35 @@ static PyObject * pass_immutable(PyObject *self, PyObject *args) {
     if (!PyArg_ParseTuple(args, "i", &value))
         return NULL;
 
-    value = 4;
+    value = 5;
 
     Py_INCREF(Py_None);
     return Py_None;
 }
 
+// Pass a mutable Python object and modify it's value
+static PyObject * pass_mutable(PyObject *self, PyObject *args) {
+    PyObject *list;
+
+    if (!PyArg_ParseTuple(args, "O", &list))
+        return NULL;
+
+    if (!PyList_Check(list))
+        return NULL;
+
+    if(PyList_SetItem(list, 0, PyLong_FromLong(6)))
+        return NULL;
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+
 static const char moduledocstring[] = "Memory interactions testing from native lib prototype";
 
 PyMethodDef memtest_methods[] = {
     {"pass_by_value", (PyCFunction)pass_immutable, METH_VARARGS, "Tries to change the value of an immutable object"},
+    {"pass_by_ref", (PyCFunction)pass_mutable, METH_VARARGS, "Tries to change the value of a mutable object"},
     {NULL, NULL, 0, NULL}
 };
 
