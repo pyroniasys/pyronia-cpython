@@ -94,7 +94,7 @@ static void dollar(const char *str) {
 
 // Does a long jump back into the main Python program
 // goes back via a callback
-static PyObject * pretty_print(PyObject *self, PyObject *args) {
+static PyObject * do_jmp(PyObject *self, PyObject *args) {
     const char *str;
     char *pretty;
     PyObject *obj;
@@ -132,23 +132,18 @@ PyMethodDef memtest_methods[] = {
     {"pass_by_ref", (PyCFunction)pass_mutable, METH_VARARGS, "Tries to change the value of a mutable object"},
     {"set_callback", (PyCFunction)set_callback, METH_VARARGS, "Sets a Python callback function to later be called by this native lib"},
     {"make_callback", (PyCFunction)make_callback, METH_VARARGS, "Calls back into a Python function"},
-    {"pretty_print", (PyCFunction)pretty_print, METH_VARARGS, "Does a long jump and calls back into the Python main"},
+    {"do_jmp", (PyCFunction)do_jmp, METH_VARARGS, "Does a long jump and calls back into the Python main"},
     {NULL, NULL, 0, NULL}
 };
 
-static struct PyModuleDef memtestmodule = {
-   PyModuleDef_HEAD_INIT,
-   "memtestlib_native",      // name of module
-   moduledocstring,  // module documentation, may be NULL
-   -1,               // size of per-interpreter state of the module, or -1 if the module keeps state in global variables.
-   memtest_methods
-};
-
 PyMODINIT_FUNC
-PyInit_memtestlib_native(void) {
+initmemtestlib_native(void) {
     PyObject *pInt = Py_BuildValue("i", global_var);
-    PyObject *mod = PyModule_Create(&memtestmodule);
+    PyObject *mod = Py_InitModule("memtestlib_native", memtest_methods);
+    if (mod == NULL) {
+        return;
+    }
+
     PyObject_SetAttrString(mod, "global_var", pInt);
 
-    return mod;
 }

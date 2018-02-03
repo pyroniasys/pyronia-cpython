@@ -37,4 +37,4 @@ def sum(x, func):
 # test 5: Long jump from native library back into Python (uses callback
 # mechanism to return to Python)
 def prettify(txt, func):
-    memtestlib_native.pretty_print(txt, func)
+    memtestlib_native.do_jmp(txt, func)
