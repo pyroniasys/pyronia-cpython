@@ -1,4 +1,5 @@
 import memtestlib_native
+import native
 
 # test 1: trying to change the value of an immutable object in native
 def add_4(x):
@@ -38,3 +39,14 @@ def sum(x, func):
 # mechanism to return to Python)
 def prettify(txt, func):
     memtestlib_native.do_jmp(txt, func)
+
+# test 6: Compare the memory address of a first-party native extension's
+# pointer to a function in a second first-party extension to the second
+# extensions pointer to the same function
+def memaddr_cmp():
+    fp_libB = memtestlib_native.dep_func
+    fp_libA = id(native.hello)
+    if fp_libA != fp_libB:
+        print("Different mem addresses for fp_libA.func and fp_libB->fp_libA.func: memtestlib_native.PyNative_Hello["+str(fp_libA)+"], native.PyNative_Hello["+str(fp_libB)+"]")
+    else:
+        print("Same mem address for fp_libA.func and fp_libB->fp_libA.func: ["+str(fp_libA)+"]")

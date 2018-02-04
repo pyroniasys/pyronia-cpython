@@ -3,6 +3,7 @@ import os
 print("\n---- Memory interaction testing ----")
 
 import memtestlib
+import native
 
 x = 3
 
@@ -32,3 +33,9 @@ memtestlib.sum(3, print_result)
 # in the main Python program
 print("test 5: longjmp'ing from native into the main Python program:")
 memtestlib.prettify("hey you", print_result)
+
+# test 6: Compare the memory address of memtestlib_native's pointer
+# to the Py_NativeHello function in native to native's pointer to
+# Py_NativeHello
+print("test 6: comparing mem addresses of libA.func with libB->libA.func:")
+memtestlib.memaddr_cmp()

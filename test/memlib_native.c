@@ -5,7 +5,10 @@
 #include <errno.h>
 #include <setjmp.h>
 
+#include "nativemodule.h"
+
 int global_var = 12;
+PyObject* (*PyNative_HelloPtr)(PyObject *, PyObject *);
 
 static PyObject *my_callback = NULL;
 static jmp_buf buf;
@@ -125,6 +128,16 @@ static PyObject * do_jmp(PyObject *self, PyObject *args) {
     return Py_None;
 }
 
+// avoid "initializer element is not constant compiler error"
+static void set_native_hello_ptr(void) {
+    PyNative_HelloPtr = &PyNative_Hello;
+}
+
+// wrapper around another native extension's function
+static PyObject * wrap_fp_ext(PyObject *self, PyObject *args) {
+    return (*PyNative_HelloPtr)(self, args);
+}
+
 static const char moduledocstring[] = "Memory interactions testing from native lib prototype";
 
 PyMethodDef memtest_methods[] = {
@@ -133,17 +146,22 @@ PyMethodDef memtest_methods[] = {
     {"set_callback", (PyCFunction)set_callback, METH_VARARGS, "Sets a Python callback function to later be called by this native lib"},
     {"make_callback", (PyCFunction)make_callback, METH_VARARGS, "Calls back into a Python function"},
     {"do_jmp", (PyCFunction)do_jmp, METH_VARARGS, "Does a long jump and calls back into the Python main"},
+    {"wrap_fp_ext", (PyCFunction)wrap_fp_ext, METH_VARARGS, "Wraps a first-party native extension's function"},
     {NULL, NULL, 0, NULL}
 };
 
 PyMODINIT_FUNC
 initmemtestlib_native(void) {
-    PyObject *pInt = Py_BuildValue("i", global_var);
-    PyObject *mod = Py_InitModule("memtestlib_native", memtest_methods);
-    if (mod == NULL) {
+    if (import_native() < 0)
         return;
-    }
+
+    PyObject *pInt = Py_BuildValue("i", global_var);
+    set_native_hello_ptr();
+    PyObject *pFunc = Py_BuildValue("i", *PyNative_HelloPtr);
+    PyObject *mod = Py_InitModule("memtestlib_native", memtest_methods);
+    if (mod == NULL)
+        return;
 
     PyObject_SetAttrString(mod, "global_var", pInt);
-
+    PyObject_SetAttrString(mod, "dep_func", pFunc);
 }
