@@ -1,5 +1,6 @@
 #include <Python.h>
 #include <stdio.h>
+#include <openssl/rand.h>
 
 #define NATIVE_MODULE
 #include "nativemodule.h"
@@ -43,9 +44,17 @@ initnative(void)
     static void *PyNative_API[PyNative_API_pointers];
     PyObject *c_api_object;
 
+    PyObject *pExtFunc = Py_BuildValue("i", &PyNative_Hello);
+    PyObject *pLibCFunc = Py_BuildValue("i", &fopen);
+    PyObject *pOpenSslFunc = Py_BuildValue("i", &RAND_bytes);
+
     m = Py_InitModule("native", test_methods);
     if (m == NULL)
         return;
+
+    PyObject_SetAttrString(m, "ext_func", pExtFunc);
+    PyObject_SetAttrString(m, "libc_func", pLibCFunc);
+    PyObject_SetAttrString(m, "openssl_func", pOpenSslFunc);
 
     /* Initialize the C API pointer array */
     PyNative_API[PyNative_Hello_NUM] = (void *)PyNative_Hello;

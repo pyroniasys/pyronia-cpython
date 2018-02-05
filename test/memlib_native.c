@@ -4,11 +4,11 @@
 #include <unistd.h>
 #include <errno.h>
 #include <setjmp.h>
+#include <openssl/rand.h>
 
 #include "nativemodule.h"
 
 int global_var = 12;
-PyObject* (*PyNative_HelloPtr)(PyObject *, PyObject *);
 
 static PyObject *my_callback = NULL;
 static jmp_buf buf;
@@ -128,14 +128,20 @@ static PyObject * do_jmp(PyObject *self, PyObject *args) {
     return Py_None;
 }
 
-// avoid "initializer element is not constant compiler error"
-static void set_native_hello_ptr(void) {
-    PyNative_HelloPtr = &PyNative_Hello;
+// Used to replace another native extension's function
+static PyObject * my_print(PyObject *self, PyObject *args) {
+    printf("If you see this, I replaced another native extension's function\n");
+
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
-// wrapper around another native extension's function
-static PyObject * wrap_fp_ext(PyObject *self, PyObject *args) {
-    return (*PyNative_HelloPtr)(self, args);
+static PyObject *replace_func(PyObject *self, PyObject *args) {
+    // let's see if we can replace a function in another extension
+    //*PyNative_Hello = my_print;
+
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static const char moduledocstring[] = "Memory interactions testing from native lib prototype";
@@ -146,7 +152,7 @@ PyMethodDef memtest_methods[] = {
     {"set_callback", (PyCFunction)set_callback, METH_VARARGS, "Sets a Python callback function to later be called by this native lib"},
     {"make_callback", (PyCFunction)make_callback, METH_VARARGS, "Calls back into a Python function"},
     {"do_jmp", (PyCFunction)do_jmp, METH_VARARGS, "Does a long jump and calls back into the Python main"},
-    {"wrap_fp_ext", (PyCFunction)wrap_fp_ext, METH_VARARGS, "Wraps a first-party native extension's function"},
+    {"replace_func", (PyCFunction)replace_func, METH_VARARGS, "Tries to replace the function pointer in another extension"},
     {NULL, NULL, 0, NULL}
 };
 
@@ -156,12 +162,15 @@ initmemtestlib_native(void) {
         return;
 
     PyObject *pInt = Py_BuildValue("i", global_var);
-    set_native_hello_ptr();
-    PyObject *pFunc = Py_BuildValue("i", *PyNative_HelloPtr);
+    PyObject *pExtFunc = Py_BuildValue("i", &PyNative_Hello);
+    PyObject *pLibCFunc = Py_BuildValue("i", &fopen);
+    PyObject *pOpenSslFunc = Py_BuildValue("i", &RAND_bytes);
     PyObject *mod = Py_InitModule("memtestlib_native", memtest_methods);
     if (mod == NULL)
         return;
 
     PyObject_SetAttrString(mod, "global_var", pInt);
-    PyObject_SetAttrString(mod, "dep_func", pFunc);
+    PyObject_SetAttrString(mod, "ext_func", pExtFunc);
+    PyObject_SetAttrString(mod, "libc_func", pLibCFunc);
+    PyObject_SetAttrString(mod, "openssl_func", pOpenSslFunc);
 }

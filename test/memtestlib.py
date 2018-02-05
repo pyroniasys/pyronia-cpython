@@ -42,11 +42,46 @@ def prettify(txt, func):
 
 # test 6: Compare the memory address of a first-party native extension's
 # pointer to a function in a second first-party extension to the second
-# extensions pointer to the same function
-def memaddr_cmp():
-    fp_libB = memtestlib_native.dep_func
-    fp_libA = id(native.hello)
+# extension's pointer to the same function
+def fp_ext_memaddr_cmp():
+    fp_libA = native.ext_func
+    hello_ptr = id(native.hello)
+    fp_libB = memtestlib_native.ext_func
+
+    if fp_libA != hello_ptr:
+        print("Different mem addresses for the function pointer and corresponding python function object: ["+str(fp_libA)+"], ["+str(hello_ptr)+"]")
+
     if fp_libA != fp_libB:
-        print("Different mem addresses for fp_libA.func and fp_libB->fp_libA.func: memtestlib_native.PyNative_Hello["+str(fp_libA)+"], native.PyNative_Hello["+str(fp_libB)+"]")
+        print("Different mem addresses: memtestlib_native.PyNative_Hello["+str(fp_libB)+"], native.PyNative_Hello["+str(fp_libA)+"]")
     else:
-        print("Same mem address for fp_libA.func and fp_libB->fp_libA.func: ["+str(fp_libA)+"]")
+        print("Same mem address native.PyNative_Hello and memtestlib_native->native.PyNative_Hello: ["+str(fp_libA)+"]")
+
+# test 7: Compare the memory address of a native extension's
+# pointer to a libC function to a second extension's pointer to the same
+# libC function
+def libc_memaddr_cmp():
+    fp_libA = native.libc_func
+    fp_libB = memtestlib_native.libc_func
+
+    if fp_libA != fp_libB:
+        print("Different mem addresses: native->fopen["+str(fp_libA)+"], memtestlib_native->fopen["+str(fp_libB)+"]")
+    else:
+        print("Same mem address for native->fopen and memtestlib_native->fopen: ["+str(fp_libA)+"]")
+
+# test 8: Compare the memory address of a native extension's
+# pointer to an openssl function to a second extension's pointer to the same
+# openssl function. In this case, libssl is dynamically linked into each extension.
+def openssl_memaddr_cmp():
+    fp_libA = native.openssl_func
+    fp_libB = memtestlib_native.openssl_func
+
+    if fp_libA != fp_libB:
+        print("Different mem addresses: native->RAND_bytes["+str(fp_libA)+"], memtestlib_native->RAND_bytes["+str(fp_libB)+"]")
+    else:
+        print("Same mem address for native->RAND_bytes and memtestlib_native->RAND_bytes: ["+str(fp_libA)+"]")
+
+# test 9: Try to replace a function pointer in native within memtestlib_native
+def replace_func_ptr():
+    native.hello()
+    memtestlib_native.replace_func()
+    native.hello()
