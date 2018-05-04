@@ -88,3 +88,9 @@ externals/
 htmlcov/
 cscope.*
 *.so
+Tools/msi/obj
+Tools/ssl/amd64
+Tools/ssl/win32
+.vs/
+.vscode/
+debug/
