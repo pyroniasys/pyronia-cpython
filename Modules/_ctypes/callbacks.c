@@ -7,6 +7,8 @@
 #include "compile.h" /* required only for 2.3, as it seems */
 #include "frameobject.h"
 
+#include "../../Python/pyronia_python.h"
+
 #include <ffi.h>
 #ifdef MS_WIN32
 #include <windows.h>
@@ -158,6 +160,7 @@ void _ctypes_add_traceback(char *funcname, char *filename, int lineno)
     if (!py_globals) goto bad;
     py_code = PyCode_NewEmpty(filename, funcname, lineno);
     if (!py_code) goto bad;
+    critical_state_alloc_pre(NULL);
     py_frame = PyFrame_New(
         PyThreadState_Get(), /*PyThreadState *tstate,*/
         py_code,             /*PyCodeObject *code,*/
@@ -171,6 +174,7 @@ void _ctypes_add_traceback(char *funcname, char *filename, int lineno)
     Py_XDECREF(py_globals);
     Py_XDECREF(py_code);
     Py_XDECREF(py_frame);
+    critical_state_alloc_post(NULL);
 }
 
 #ifdef MS_WIN32

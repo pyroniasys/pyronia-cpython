@@ -19,6 +19,8 @@ typedef struct {
     int cf_flags;  /* bitmask of CO_xxx flags relevant to future */
 } PyCompilerFlags;
 
+char *Pyr_MainMod; /* Needed by pyronia for tracking the main module */
+  
 PyAPI_FUNC(void) Py_SetProgramName(char *);
 PyAPI_FUNC(char *) Py_GetProgramName(void);
 

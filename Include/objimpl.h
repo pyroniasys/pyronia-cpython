@@ -279,6 +279,8 @@ extern PyGC_Head *_PyGC_generation0;
     _PyGC_generation0->gc.gc_prev = g; \
     } while (0);
 
+#include "../Python/pyronia_python.h"
+  
 /* Tell the GC to stop tracking this object.
  * gc_next doesn't need to be set to NULL, but doing so is a good
  * way to provoke memory errors if calling code is confused.
@@ -287,10 +289,20 @@ extern PyGC_Head *_PyGC_generation0;
     PyGC_Head *g = _Py_AS_GC(o); \
     assert(g->gc.gc_refs != _PyGC_REFS_UNTRACKED); \
     g->gc.gc_refs = _PyGC_REFS_UNTRACKED; \
+    int is_crit_prev = pyr_is_critical_state(g->gc.gc_prev); \
+    int is_crit_next = pyr_is_critical_state(g->gc.gc_next); \
+    if (is_crit_prev)					     \
+      critical_state_alloc_pre(g->gc.gc_prev);		     \
+    if (is_crit_next)				\
+      critical_state_alloc_pre(g->gc.gc_next); \
     g->gc.gc_prev->gc.gc_next = g->gc.gc_next; \
     g->gc.gc_next->gc.gc_prev = g->gc.gc_prev; \
-    g->gc.gc_next = NULL; \
-    } while (0);
+    g->gc.gc_next = NULL;			\
+    if (is_crit_prev)				\
+      critical_state_alloc_post(g->gc.gc_prev);	\
+    if (is_crit_next)				\
+      critical_state_alloc_post(g->gc.gc_next); \
+  } while (0);
 
 /* True if the object is currently tracked by the GC. */
 #define _PyObject_GC_IS_TRACKED(o) \
@@ -314,7 +326,6 @@ PyAPI_FUNC(void) PyObject_GC_Del(void *);
                 ( (type *) _PyObject_GC_New(typeobj) )
 #define PyObject_GC_NewVar(type, typeobj, n) \
                 ( (type *) _PyObject_GC_NewVar((typeobj), (n)) )
-
 
 /* Utility macro to help write tp_traverse functions.
  * To use this macro, the tp_traverse function must name its arguments

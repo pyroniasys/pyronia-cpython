@@ -764,19 +764,26 @@ PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
     (*Py_TYPE(op)->tp_dealloc)((PyObject *)(op)))
 #endif /* !Py_TRACE_REFS */
 
-#define Py_INCREF(op) (                         \
-    _Py_INC_REFTOTAL  _Py_REF_DEBUG_COMMA       \
+#include "../Python/pyronia_python.h"
+  
+#define Py_INCREF(op) (				\
+    _Py_INC_REFTOTAL  _Py_REF_DEBUG_COMMA	\
     ((PyObject*)(op))->ob_refcnt++)
-
+  
 #define Py_DECREF(op)                                   \
     do {                                                \
         if (_Py_DEC_REFTOTAL  _Py_REF_DEBUG_COMMA       \
         --((PyObject*)(op))->ob_refcnt != 0)            \
             _Py_CHECK_REFCNT(op)                        \
         else                                            \
-        _Py_Dealloc((PyObject *)(op));                  \
+	  _Py_Dealloc((PyObject *)(op));		\
     } while (0)
 
+/* Macros to use in case the object pointer may be NULL: */
+#define Py_XINCREF(op) do { if ((op) == NULL) ; else Py_INCREF(op); } while (0)
+#define Py_XDECREF(op) do { if ((op) == NULL) ; else Py_DECREF(op); } while (0)
+
+#ifndef Py_PYRONIA
 /* Safely decref `op` and set `op` to NULL, especially useful in tp_clear
  * and tp_dealloc implementations.
  *
@@ -815,14 +822,10 @@ PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
     do {                                        \
         if (op) {                               \
             PyObject *_py_tmp = (PyObject *)(op);               \
-            (op) = NULL;                        \
-            Py_DECREF(_py_tmp);                 \
+            (op) = NULL;					\
+            Py_DECREF(_py_tmp);					\
         }                                       \
     } while (0)
-
-/* Macros to use in case the object pointer may be NULL: */
-#define Py_XINCREF(op) do { if ((op) == NULL) ; else Py_INCREF(op); } while (0)
-#define Py_XDECREF(op) do { if ((op) == NULL) ; else Py_DECREF(op); } while (0)
 
 /* Safely decref `op` and set `op` to `op2`.
  *
@@ -842,21 +845,61 @@ PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
  * Py_XSETREF is a variant of Py_SETREF that uses Py_XDECREF instead of
  * Py_DECREF.
  */
-
 #define Py_SETREF(op, op2)                      \
-    do {                                        \
+  do {						\
         PyObject *_py_tmp = (PyObject *)(op);   \
-        (op) = (op2);                           \
-        Py_DECREF(_py_tmp);                     \
-    } while (0)
+        (op) = (op2);						\
+        Py_DECREF(_py_tmp);					\
+  } while (0)
 
 #define Py_XSETREF(op, op2)                     \
     do {                                        \
         PyObject *_py_tmp = (PyObject *)(op);   \
-        (op) = (op2);                           \
-        Py_XDECREF(_py_tmp);                    \
+	(op) = (op2);						\
+        Py_XDECREF(_py_tmp);					\
     } while (0)
 
+#else
+#define Py_CLEAR(op)                            \
+    do {                                        \
+        if (op) {                               \
+            PyObject *_py_tmp = (PyObject *)(op);               \
+	    int is_crit = pyr_is_critical_state(op);		\
+	    if (is_crit)					\
+	      critical_state_alloc_pre(op);			\
+            (op) = NULL;					\
+	    if (is_crit)					\
+	      critical_state_alloc_post(op);			\
+            Py_DECREF(_py_tmp);					\
+        }                                       \
+    } while (0)
+
+#define Py_SETREF(op, op2)                      \
+  do {						\
+        PyObject *_py_tmp = (PyObject *)(op);   \
+        int is_crit = pyr_is_critical_state(op);		\
+	if (is_crit)						\
+	  critical_state_alloc_pre(op);				\
+        (op) = (op2);						\
+	if (is_crit)						\
+	  critical_state_alloc_post(op);				\
+        Py_DECREF(_py_tmp);					\
+  } while (0)
+
+#define Py_XSETREF(op, op2)                     \
+    do {                                        \
+        PyObject *_py_tmp = (PyObject *)(op);   \
+	int is_crit = pyr_is_critical_state(op);		\
+	if (is_crit)						\
+	  critical_state_alloc_pre(op);				\
+	(op) = (op2);						\
+	if (is_crit)						\
+	  critical_state_alloc_post(op);				\
+        Py_XDECREF(_py_tmp);					\
+    } while (0)
+  
+#endif /* ifndef Py_PYRONIA */
+  
 /*
 These are provided as conveniences to Python runtime embedders, so that
 they can have object code that is not dependent on Python compilation flags.

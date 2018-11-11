@@ -18,6 +18,7 @@
 #include "eval.h"
 #include "marshal.h"
 #include "abstract.h"
+#include "pyronia_python.h"
 
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
@@ -82,7 +83,6 @@ int Py_IgnoreEnvironmentFlag; /* e.g. PYTHONPATH, PYTHONHOME */
 int _Py_QnewFlag = 0;
 int Py_NoUserSiteDirectory = 0; /* for -s and site.py */
 int Py_HashRandomizationFlag = 0; /* for -R and PYTHONHASHSEED */
-
 
 /* Hack to force loading of object files */
 int (*_PyOS_mystrnicmp_hack)(const char *, const char *, Py_ssize_t) = \
@@ -158,6 +158,8 @@ isatty_no_error(PyObject *sys_stream)
     return 0;
 }
 
+  extern size_t total_frame_alloc;
+  
 void
 Py_InitializeEx(int install_sigs)
 {
@@ -172,6 +174,7 @@ Py_InitializeEx(int install_sigs)
     int free_codeset = 0;
     int overridden = 0;
     PyObject *sys_stream;
+    int err = -1;
 #if defined(Py_USING_UNICODE) && defined(HAVE_LANGINFO_H) && defined(CODESET)
     char *saved_locale, *loc_codeset;
 #endif
@@ -199,7 +202,7 @@ Py_InitializeEx(int install_sigs)
         Py_HashRandomizationFlag = add_flag(Py_HashRandomizationFlag, p);
 
     _PyRandom_Init();
-
+    
     interp = PyInterpreterState_New();
     if (interp == NULL)
         Py_FatalError("Py_Initialize: can't make first interpreter");
@@ -209,6 +212,17 @@ Py_InitializeEx(int install_sigs)
         Py_FatalError("Py_Initialize: can't make first thread");
     (void) PyThreadState_Swap(tstate);
 
+#ifdef Py_PYRONIA
+    // Pyronia hook: initialize memdom subsystem and open
+    // stack inspection communication channel
+    if ((err = pyr_init(Pyr_MainMod, LIB_POLICY,
+			Py_Generate_Pyronia_Callstack,
+			acquire_gil, release_gil)))
+      Py_FatalError("Pyronia init failed");
+
+    printf("done initializing pyronia\n");
+#endif
+    
     _Py_ReadyTypes();
 
     if (!_PyFrame_Init())
@@ -452,6 +466,7 @@ Py_Finalize(void)
      * XXX but I'm unclear on exactly how that one happens.  In any case,
      * XXX I haven't seen a real-life report of either of these.
      */
+    critical_state_alloc_pre(NULL);
     PyGC_Collect();
 #ifdef COUNT_ALLOCS
     /* With COUNT_ALLOCS, it helps to run GC multiple times:
@@ -463,6 +478,7 @@ Py_Finalize(void)
 
     /* Destroy all modules */
     PyImport_Cleanup();
+    critical_state_alloc_post(NULL);
 
     /* Collect final garbage.  This disposes of cycles created by
      * new-style class definitions, for example.
@@ -563,6 +579,14 @@ Py_Finalize(void)
 #ifdef PYMALLOC_DEBUG
     if (Py_GETENV("PYTHONMALLOCSTATS"))
         _PyObject_DebugMallocStats();
+#endif
+
+#ifdef Py_PYRONIA
+    // Pyronia hook: Clean up all Pyronia-related
+    // secure state, SI comm and memdoms
+    pyr_exit();
+#else
+    printf("[%s] Total frame allocations: %lu bytes\n", __func__, total_frame_alloc);
 #endif
 
     call_ll_exitfuncs();

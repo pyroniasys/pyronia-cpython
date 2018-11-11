@@ -6,6 +6,9 @@
 #include "frameobject.h"
 #include "opcode.h"
 #include "structmember.h"
+#include "../Python/pyronia_python.h"
+
+#include <stdio.h>
 
 #undef MIN
 #undef MAX
@@ -55,8 +58,10 @@ WARN_GET_SET(f_exc_value)
 static PyObject *
 frame_getlocals(PyFrameObject *f, void *closure)
 {
+    critical_state_alloc_pre(f);
     PyFrame_FastToLocals(f);
     Py_INCREF(f->f_locals);
+    critical_state_alloc_post(f);
     return f->f_locals;
 }
 
@@ -114,12 +119,15 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     int in_finally[CO_MAXBLOCKS];       /* (ditto) */
     int blockstack_top = 0;             /* (ditto) */
     unsigned char setup_op = 0;         /* (ditto) */
+    int err = -1;
+
+     critical_state_alloc_pre(f);
 
     /* f_lineno must be an integer. */
     if (!PyInt_Check(p_new_lineno)) {
         PyErr_SetString(PyExc_ValueError,
                         "lineno must be an integer");
-        return -1;
+        goto out;
     }
 
     /* You can only do this from within a trace function, not via
@@ -129,7 +137,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
         PyErr_Format(PyExc_ValueError,
                      "f_lineno can only be set by a"
                      " line trace function");
-        return -1;
+        goto out;;
     }
 
     /* Fail if the line comes before the start of the code block. */
@@ -138,7 +146,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
         PyErr_Format(PyExc_ValueError,
                      "line %d comes before the current code block",
                      new_lineno);
-        return -1;
+        goto out;
     }
     else if (new_lineno == f->f_code->co_firstlineno) {
         new_lasti = 0;
@@ -170,7 +178,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
         PyErr_Format(PyExc_ValueError,
                      "line %d comes after the current code block",
                      new_lineno);
-        return -1;
+        goto out;
     }
 
     /* We're now ready to look at the bytecode. */
@@ -191,7 +199,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     if (code[new_lasti] == DUP_TOP || code[new_lasti] == POP_TOP) {
         PyErr_SetString(PyExc_ValueError,
             "can't jump to 'except' line as there's no exception");
-        return -1;
+        goto out;
     }
 
     /* You can't jump into or out of a 'finally' block because the 'try'
@@ -280,7 +288,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     if (new_lasti_setup_addr != f_lasti_setup_addr) {
         PyErr_SetString(PyExc_ValueError,
                     "can't jump into or out of a 'finally' block");
-        return -1;
+        goto out;
     }
 
 
@@ -330,7 +338,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     if (new_iblock > min_iblock) {
         PyErr_SetString(PyExc_ValueError,
                         "can't jump into the middle of a block");
-        return -1;
+        goto out;
     }
 
     /* Pop any blocks that we're jumping out of. */
@@ -345,25 +353,27 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     /* Finally set the new f_lineno and f_lasti and return OK. */
     f->f_lineno = new_lineno;
     f->f_lasti = new_lasti;
-    return 0;
+    err = 0;
+ out:
+    critical_state_alloc_post(f);
+    return err;
 }
 
 static PyObject *
 frame_gettrace(PyFrameObject *f, void *closure)
 {
     PyObject* trace = f->f_trace;
-
     if (trace == NULL)
         trace = Py_None;
 
     Py_INCREF(trace);
-
     return trace;
 }
 
 static int
 frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
 {
+    critical_state_alloc_pre(f);
     /* We rely on f_lineno being accurate when f_trace is set. */
     f->f_lineno = PyFrame_GetLineNumber(f);
 
@@ -371,6 +381,7 @@ frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
         v = NULL;
     Py_XINCREF(v);
     Py_XSETREF(f->f_trace, v);
+    critical_state_alloc_post(f);
 
     return 0;
 }
@@ -450,17 +461,23 @@ frame_dealloc(PyFrameObject *f)
     PyObject **p, **valuestack;
     PyCodeObject *co;
 
+    pyrlog("[%s] frame at %p\n", __func__, f);
+    
+    critical_state_alloc_pre(f);
     PyObject_GC_UnTrack(f);
     Py_TRASHCAN_SAFE_BEGIN(f)
     /* Kill all local variables */
     valuestack = f->f_valuestack;
-    for (p = f->f_localsplus; p < valuestack; p++)
+    for (p = f->f_localsplus; p < valuestack; p++) {
+        critical_state_alloc_pre(*p);
         Py_CLEAR(*p);
+    }
 
     /* Free stack */
     if (f->f_stacktop != NULL) {
-        for (p = valuestack; p < f->f_stacktop; p++)
+      for (p = valuestack; p < f->f_stacktop; p++) {
             Py_XDECREF(*p);
+      }	
     }
 
     Py_XDECREF(f->f_back);
@@ -473,17 +490,30 @@ frame_dealloc(PyFrameObject *f)
     Py_CLEAR(f->f_exc_traceback);
 
     co = f->f_code;
-    if (co->co_zombieframe == NULL)
+    if (co->co_zombieframe == NULL) {
+        pyrlog("[%s] zombieframe \n", __func__);
         co->co_zombieframe = f;
+    }
     else if (numfree < PyFrame_MAXFREELIST) {
+        pyrlog("[%s] add to free list \n", __func__);
         ++numfree;
         f->f_back = free_list;
         free_list = f;
     }
-    else
+    else {
+#ifdef Py_PYRONIA
+        pyrlog("[%s] new frame alloc\n", __func__);
+        if (pyr_is_interpreter_build())
+            PyObject_GC_Del(f);
+        else
+            PyObject_GC_SecureDel(f);
+#else
         PyObject_GC_Del(f);
+#endif
+    }
 
     Py_DECREF(co);
+    critical_state_alloc_post(f);
     Py_TRASHCAN_SAFE_END(f)
 }
 
@@ -493,6 +523,7 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
     PyObject **fastlocals, **p;
     int i, slots;
 
+    critical_state_alloc_pre(f);
     Py_VISIT(f->f_back);
     Py_VISIT(f->f_code);
     Py_VISIT(f->f_builtins);
@@ -514,6 +545,7 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
         for (p = f->f_valuestack; p < f->f_stacktop; p++)
             Py_VISIT(*p);
     }
+    critical_state_alloc_post(f);
     return 0;
 }
 
@@ -523,6 +555,8 @@ frame_clear(PyFrameObject *f)
     PyObject **fastlocals, **p, **oldtop;
     int i, slots;
 
+    critical_state_alloc_pre(f);
+    
     /* Before anything else, make sure that this frame is clearly marked
      * as being defunct!  Else, e.g., a generator reachable from this
      * frame may also point to this frame, believe itself to still be
@@ -547,6 +581,8 @@ frame_clear(PyFrameObject *f)
         for (p = f->f_valuestack; p < oldtop; p++)
             Py_CLEAR(*p);
     }
+
+    critical_state_alloc_post(f);
 }
 
 static PyObject *
@@ -626,6 +662,8 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
     PyFrameObject *f;
     PyObject *builtins;
     Py_ssize_t i;
+    PyObject *name_obj;
+    char *module_name = "null";
 
 #ifdef Py_DEBUG
     if (code == NULL || globals == NULL || !PyDict_Check(globals) ||
@@ -677,8 +715,18 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
         extras = code->co_stacksize + code->co_nlocals + ncells +
             nfrees;
         if (free_list == NULL) {
-            f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type,
-            extras);
+#ifdef Py_PYRONIA
+	    pyrlog("[%s] new frame alloc\n", __func__);
+	    if (pyr_is_interpreter_build())
+	      f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type,
+					   extras);
+	    else
+	      f = PyObject_GC_NewSecureVar(PyFrameObject, &PyFrame_Type,
+					   extras);
+#else
+	    f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type,
+	    extras);
+#endif
             if (f == NULL) {
                 Py_DECREF(builtins);
                 return NULL;
@@ -689,8 +737,15 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
             --numfree;
             f = free_list;
             free_list = free_list->f_back;
+	    pyrlog("[%s] resize frame\n", __func__);
             if (Py_SIZE(f) < extras) {
-                f = PyObject_GC_Resize(PyFrameObject, f, extras);
+#ifdef Py_PYRONIA
+	        PyObject_GC_SecureDel(f);
+                f = PyObject_GC_NewSecureVar(PyFrameObject, &PyFrame_Type,
+					     extras);
+#else
+		f = PyObject_GC_Resize(PyFrameObject, f, extras);
+#endif
                 if (f == NULL) {
                     Py_DECREF(builtins);
                     return NULL;
@@ -739,6 +794,12 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
     f->f_lineno = code->co_firstlineno;
     f->f_iblock = 0;
 
+    name_obj = PyDict_GetItemString(f->f_globals, "__name__");
+    if (name_obj && PyString_Check(name_obj))
+      module_name = PyString_AsString(name_obj);
+    
+    pyrlog("[%s] Allocated frame at %p for module: %s\n", __func__, f, module_name);
+    
     _PyObject_GC_TRACK(f);
     return f;
 }
@@ -965,7 +1026,10 @@ PyFrame_ClearFreeList(void)
     while (free_list != NULL) {
         PyFrameObject *f = free_list;
         free_list = free_list->f_back;
-        PyObject_GC_Del(f);
+	if (pyr_is_interpreter_build())
+	  PyObject_GC_Del(f);
+	else
+	  PyObject_GC_SecureDel(f);
         --numfree;
     }
     assert(numfree == 0);

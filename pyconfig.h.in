@@ -1010,6 +1010,9 @@
 /* Define if you want to build an interpreter with many run-time checks. */
 #undef Py_DEBUG
 
+/* Define if you want to build an interpreter with Pyronia. */
+#undef Py_PYRONIA
+
 /* Defined if Python is built as a shared library. */
 #undef Py_ENABLE_SHARED
 

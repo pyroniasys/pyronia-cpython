@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "code.h"
 #include "structmember.h"
+#include "../Python/pyronia_python.h"
 
 #define NAME_CHARS \
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
@@ -354,7 +355,7 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_name);
     Py_XDECREF(co->co_lnotab);
     if (co->co_zombieframe != NULL)
-        PyObject_GC_Del(co->co_zombieframe);
+        PyObject_GC_SecureDel(co->co_zombieframe);
     if (co->co_weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject*)co);
     PyObject_DEL(co);

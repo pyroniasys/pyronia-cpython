@@ -2,7 +2,7 @@
 
 #include "Python.h"
 #include "structmember.h"
-
+#include "../Python/pyronia_python.h"
 #include <ctype.h>
 
 
@@ -795,8 +795,11 @@ PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
     else
         (void) PyObject_INIT_VAR((PyVarObject *)obj, type, nitems);
 
-    if (PyType_IS_GC(type))
+    if (PyType_IS_GC(type)) {
+        critical_state_alloc_pre(obj);
         _PyObject_GC_TRACK(obj);
+	critical_state_alloc_post(obj);
+    }
     return obj;
 }
 

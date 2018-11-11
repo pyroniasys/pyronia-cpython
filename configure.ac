@@ -1036,6 +1036,21 @@ else AC_MSG_RESULT(no); Py_DEBUG='false'
 fi],
 [AC_MSG_RESULT(no)])
 
+# Check for --with-pyronia
+AC_MSG_CHECKING(for --with-pyronia)
+AC_ARG_WITH(pyronia, 
+            AS_HELP_STRING([--with-pyronia], [build with Py_PYRONIA defined]),
+[
+if test "$withval" != no
+then 
+  AC_DEFINE(Py_PYRONIA, 1, 
+  [Define if you want to build a Pyronia-aware interpreter.]) 
+  AC_MSG_RESULT(yes); 
+  Py_PYRONIA='true'
+else AC_MSG_RESULT(no); Py_PYRONIA='false'
+fi],
+[AC_MSG_RESULT(no)])
+
 # XXX Shouldn't the code above that fiddles with BASECFLAGS and OPT be
 # merged with this chunk of code?
 

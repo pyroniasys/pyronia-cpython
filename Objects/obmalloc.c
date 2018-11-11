@@ -1,5 +1,7 @@
 #include "Python.h"
 
+#include "../Python/pyronia_python.h"
+
 #if defined(__has_feature)  /* Clang */
  #if __has_feature(address_sanitizer)  /* is ASAN enabled? */
   #define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS \
@@ -1000,9 +1002,19 @@ PyObject_Free(void *p)
 #ifndef Py_USING_MEMORY_DEBUGGER
     uint arenaindex_temp;
 #endif
-
+    
     if (p == NULL)      /* free(NULL) has no effect */
         return;
+
+#ifdef Py_PYRONIA
+    /* Pyronia allocated this address, so
+     * free it with memdom_free and skip the rest
+     * of these checks. */
+    if (pyr_free_critical_state(p)) {
+      pyrlog("[%s] Freed memdom-protected object\n", __func__);
+      return;
+    }
+#endif
 
 #ifdef WITH_VALGRIND
     if (UNLIKELY(running_on_valgrind > 0))
@@ -1210,6 +1222,7 @@ PyObject_Free(void *p)
 #ifdef WITH_VALGRIND
 redirect:
 #endif
+
     /* We didn't allocate this address. */
     free(p);
 }

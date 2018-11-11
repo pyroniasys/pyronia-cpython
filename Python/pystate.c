@@ -599,7 +599,7 @@ PyGILState_Ensure(void)
     tcur = (PyThreadState *)PyThread_get_key_value(autoTLSkey);
     if (tcur == NULL) {
         need_init_threads = 1;
-
+	
         /* Create a new thread state for this thread */
         tcur = PyThreadState_New(autoInterpreterState);
         if (tcur == NULL)
@@ -630,7 +630,7 @@ PyGILState_Ensure(void)
            GIL. */
         PyEval_InitThreads();
     }
-
+    
     return current ? PyGILState_LOCKED : PyGILState_UNLOCKED;
 }
 

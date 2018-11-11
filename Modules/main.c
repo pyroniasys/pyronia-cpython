@@ -5,6 +5,9 @@
 #include "code.h" /* For CO_FUTURE_DIVISION */
 #include "import.h"
 
+// FIXME: this should be a build flag
+#include <time.h>
+
 #ifdef __VMS
 #include <unixlib.h>
 #endif
@@ -548,6 +551,7 @@ Py_Main(int argc, char **argv)
 #else
     Py_SetProgramName(argv[0]);
 #endif
+    Pyr_MainMod = (module == NULL ? filename : module);
     Py_Initialize();
 
     if (Py_VerboseFlag ||
@@ -642,10 +646,16 @@ Py_Main(int argc, char **argv)
                 PyErr_Print();
                 sts = 1;
             } else {
+	        double result = 0;
+		struct timespec start, stop;
+		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
                 sts = PyRun_AnyFileExFlags(
                     fp,
                     filename == NULL ? "<stdin>" : filename,
                     filename != NULL, &cf) != 0;
+		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
+		result = (stop.tv_sec - start.tv_sec) * 1e6 + (stop.tv_nsec - start.tv_nsec) / 1e3;
+		fprintf(stdout, "CPU time for %s = %.2f us\n", filename, result);
             }
         }
 
