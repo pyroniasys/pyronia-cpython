@@ -51,4 +51,5 @@ include /home/pyronia/cpython/install.prof
 # include /home/pyronia/libpyronia/apps/plant_watering/moisture.prof
 # include /home/pyronia/cpython/microbenchmarks/test_modules/micro.prof
 include /home/pyronia/cpython/mem-attack.prof
+include /home/pyronia/cpython/ripe.prof
 }
