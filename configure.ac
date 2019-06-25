@@ -1051,6 +1051,21 @@ else AC_MSG_RESULT(no); Py_PYRONIA='false'
 fi],
 [AC_MSG_RESULT(no)])
 
+# Check for --with-pyronia-benchmarking
+AC_MSG_CHECKING(for --with-pyronia-benchmarking)
+AC_ARG_WITH(pyronia-benchmarking, 
+            AS_HELP_STRING([--with-pyronia-benchmarking], [build with Py_PYRONIA_BENCH defined]),
+[
+if test "$withval" != no
+then 
+  AC_DEFINE(Py_PYRONIA_BENCH, 1, 
+  [Define if you want to build a Pyronia-aware interpreter that collects benchmarking info.]) 
+  AC_MSG_RESULT(yes); 
+  Py_PYRONIA_BENCH='true'
+else AC_MSG_RESULT(no); Py_PYRONIA_BENCH='false'
+fi],
+[AC_MSG_RESULT(no)])
+
 # XXX Shouldn't the code above that fiddles with BASECFLAGS and OPT be
 # merged with this chunk of code?
 

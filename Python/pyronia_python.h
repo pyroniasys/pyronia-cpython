@@ -20,6 +20,9 @@
     }\
   }
 
+#ifdef Py_PYRONIA_BENCH
+int max_dep_depth;
+#endif
 
 void acquire_gil(void);
 void release_gil(void);

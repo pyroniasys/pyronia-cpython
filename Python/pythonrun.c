@@ -219,10 +219,11 @@ Py_InitializeEx(int install_sigs)
 			Py_Generate_Pyronia_Callstack,
 			acquire_gil, release_gil)))
       Py_FatalError("Pyronia init failed");
-
-    printf("done initializing pyronia\n");
 #endif
-    
+#ifdef Py_PYRONIA_BENCH
+    max_dep_depth = 0;
+#endif
+
     _Py_ReadyTypes();
 
     if (!_PyFrame_Init())

@@ -804,6 +804,7 @@ enable_shared
 enable_profiling
 with_pydebug
 with_pyronia
+with_pyronia_benchmarking
 enable_optimizations
 with_lto
 enable_toolbox_glue
@@ -1502,6 +1503,8 @@ Optional Packages:
   --with-suffix=.exe      set executable suffix
   --with-pydebug          build with Py_DEBUG defined
   --with-pyronia          build with Py_PYRONIA defined
+  --with-pyronia-benchmarking
+                          build with Py_PYRONIA_BENCH defined
   --with-lto              Enable Link Time Optimization in PGO builds.
                           Disabled by default.
   --with-libs='lib1 ...'  link against additional libs
@@ -6002,6 +6005,28 @@ else
 $as_echo "no" >&6; }
 fi
 
+# Check for --with-pyronia-benchmarking
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-pyronia-benchmarking" >&5
+$as_echo_n "checking for --with-pyronia-benchmarking... " >&6; }
+
+# Check whether --with-pyronia-benchmarking was given.
+if test "${with_pyronia_benchmarking+set}" = set; then :
+  withval=$with_pyronia_benchmarking;
+if test "$withval" != no
+then
+
+$as_echo "#define Py_PYRONIA_BENCH 1" >>confdefs.h
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; };
+  Py_PYRONIA_BENCH='true'
+else { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }; Py_PYRONIA_BENCH='false'
+fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
 
 # XXX Shouldn't the code above that fiddles with BASECFLAGS and OPT be
 # merged with this chunk of code?

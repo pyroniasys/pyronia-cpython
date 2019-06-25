@@ -261,6 +261,14 @@ Py_Main(int argc, char **argv)
     int saw_unbuffered_flag = 0;
     PyCompilerFlags cf;
 
+#ifdef Py_PYRONIA_BENCH
+    FILE *time_file = NULL;
+    char *timefile_str = NULL;
+    size_t timefile_str_len = 0;
+    double exec_time = 0, e2e_exec_time = 0;
+    struct timespec start, stop, e2e_start, e2e_stop;
+#endif
+
     cf.cf_flags = 0;
 
     orig_argc = argc;           /* For Py_GetArgcArgv() */
@@ -552,6 +560,10 @@ Py_Main(int argc, char **argv)
     Py_SetProgramName(argv[0]);
 #endif
     Pyr_MainMod = (module == NULL ? filename : module);
+#ifdef Py_PYRONIA_BENCH
+    timefile_str_len = strlen(Pyr_MainMod)+5+1;
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &e2e_start);
+#endif
     Py_Initialize();
 
     if (Py_VerboseFlag ||
@@ -646,16 +658,16 @@ Py_Main(int argc, char **argv)
                 PyErr_Print();
                 sts = 1;
             } else {
-	        double result = 0;
-		struct timespec start, stop;
-		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
+#ifdef Py_PYRONIA_BENCH
+                clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
+#endif
                 sts = PyRun_AnyFileExFlags(
                     fp,
                     filename == NULL ? "<stdin>" : filename,
                     filename != NULL, &cf) != 0;
+#ifdef Py_PYRONIA_BENCH
 		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
-		result = (stop.tv_sec - start.tv_sec) * 1e6 + (stop.tv_nsec - start.tv_nsec) / 1e3;
-		fprintf(stdout, "CPU time for %s = %.2f us\n", filename, result);
+#endif
             }
         }
 
@@ -678,6 +690,31 @@ Py_Main(int argc, char **argv)
     }
 
     Py_Finalize();
+
+    #ifdef Py_PYRONIA_BENCH
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &e2e_stop);
+    exec_time = (stop.tv_sec - start.tv_sec) * 1e6 + (stop.tv_nsec - start.tv_nsec) / 1e3;
+    e2e_exec_time = (e2e_stop.tv_sec - e2e_start.tv_sec) * 1e6 + (e2e_stop.tv_nsec - e2e_start.tv_nsec) / 1e3;
+
+#ifdef Py_PYRONIA
+    if (!pyr_is_interpreter_build()) {
+#endif
+      if((timefile_str = malloc(timefile_str_len)) == NULL){
+	printf("Not recording timing for %s!\n", Pyr_MainMod);
+	goto done_timing;
+      }
+      memset(timefile_str, 0, timefile_str_len);   // ensures the memory is an empty string
+      strcat(timefile_str, Pyr_MainMod);
+      strcat(timefile_str, ".data");
+      time_file = fopen(timefile_str, "a+");
+      fprintf(time_file, "%.2f, %.2f, %d\n", exec_time, e2e_exec_time, max_dep_depth);
+      fclose(time_file);
+#ifdef Py_PYRONIA
+    }
+#endif
+ done_timing:
+#endif // ends ifdef BENCH
+
 #ifdef RISCOS
     if (Py_RISCOSWimpFlag)
         fprintf(stderr, "\x0cq\x0c"); /* make frontend quit */
