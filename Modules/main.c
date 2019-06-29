@@ -691,7 +691,7 @@ Py_Main(int argc, char **argv)
 
     Py_Finalize();
 
-    #ifdef Py_PYRONIA_BENCH
+#ifdef Py_PYRONIA_BENCH
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &e2e_stop);
     exec_time = (stop.tv_sec - start.tv_sec) * 1e6 + (stop.tv_nsec - start.tv_nsec) / 1e3;
     e2e_exec_time = (e2e_stop.tv_sec - e2e_start.tv_sec) * 1e6 + (e2e_stop.tv_nsec - e2e_start.tv_nsec) / 1e3;

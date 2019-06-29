@@ -1,0 +1,51 @@
+/home/pyronia/cpython/pyronia_build/python {
+# these need to be included by default
+/etc/ld.so.cache r,
+/lib/x86_64-linux-gnu/** rm,
+/usr/lib/x86_64-linux-gnu/** rm,
+/lib/x86_64-linux-gnu/libc-2.27.so rm,
+/lib/x86_64-linux-gnu/libpyronia.so rm,
+/lib/x86_64-linux-gnu/libsmv.so rm,
+/lib/x86_64-linux-gnu/libpthread-2.27.so rm,
+/lib/x86_64-linux-gnu/libnl-genl-3.so.200.24.0 rm,
+/lib/x86_64-linux-gnu/libnl-3.so.200.24.0 rm,
+/lib/x86_64-linux-gnu/libm-2.27.so rm,
+/lib/x86_64-linux-gnu/libdl-2.27.so rm,
+/lib/x86_64-linux-gnu/libutil-2.27.so rm,
+/lib/x86_64-linux-gnu/libgcc_s.so.1 rm,
+/proc/*/net/psched r,
+/dev/pts/* r,
+/usr/lib/locale/locale-archive r,
+/usr/local/lib/python2.7/* r,
+/home/pyronia/libpyronia/ r,
+/home/pyronia/cpython/ r,
+/home/pyronia/cpython/Lib** rmix,
+/home/pyronia/cpython/pyronia_build/** rm,
+/usr/local/lib/python2.7/site-packages/ r,
+/usr/local/lib/python2.7/site-packages/** rmix,
+/usr/local/lib/python2.7/dist-packages/ r,
+/usr/local/lib/python2.7/dist-packages/openalpr** rmix,
+/usr/local/lib r,
+/usr/share/zoneinfo/posixrules r,
+/proc/*/mounts rix,
+/proc/*/status r,
+/proc/*/maps r,
+/dev/urandom r,
+/dev/ r,
+/home/ r,
+/dev/null rw,
+/proc/stat r,
+/home/pyronia/cpython/benchmarks/** rw,
+/home/pyronia/.local/lib/python2.7/site-packages** rmix,
+/sbin/ldconfig* rix,
+/home/pyronia/cpython/profiles/home.pyronia.cpython.pyronia_build.python-lib.prof r,
+
+# TODO: replace these with YOUR resource access rules
+# include /home/pyronia/cpython/install.prof
+
+include /home/pyronia/libpyronia/apps/hello/hello.prof
+# include /home/pyronia/libpyronia/apps/twitterPhoto/twitterPhoto.prof
+# include /home/pyronia/libpyronia/apps/alexa/alexa.prof
+# include /home/pyronia/libpyronia/apps/plant_watering/moisture.prof
+# include /home/pyronia/cpython/microbenchmarks/test_modules/micro.prof
+}

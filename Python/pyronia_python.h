@@ -10,7 +10,7 @@
 #include <linux/pyronia_mac.h>
 #include <pyronia_lib.h>
 
-#define LIB_POLICY "/home/pyronia/cpython/home.pyronia.cpython.pyronia_build.python-lib.prof"
+#define LIB_POLICY "/home/pyronia/cpython/profiles/home.pyronia.cpython.pyronia_build.python-lib.prof"
 
 #define PYR_LOGGING 0
 #define pyrlog(format, ...) { \

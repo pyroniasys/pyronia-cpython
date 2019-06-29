@@ -1,7 +1,8 @@
 #!/bin/bash
 
-SRCDIR=$HOME/cpython
+SRCDIR=$HOME/cpython/profiles
 PYEXEC=home.pyronia.cpython.pyronia_build.python
 
 sudo cp $SRCDIR/$PYEXEC /etc/pyronia.d
-sudo apparmor_parser -rC /etc/pyronia.d/$PYEXEC
+sudo apparmor_parser -R /etc/pyronia.d/$PYEXEC
+sudo apparmor_parser -r /etc/pyronia.d/$PYEXEC
