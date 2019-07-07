@@ -1538,6 +1538,11 @@ _PyObject_GC_SecureMalloc(size_t basicsize)
         return PyErr_NoMemory();
     g = (PyGC_Head *)pyr_alloc_critical_runtime_state(
         sizeof(PyGC_Head) + basicsize);
+    if ((void *)g == (void *)1) {
+      g = (PyGC_Head *)PyObject_MALLOC(
+				       sizeof(PyGC_Head) + basicsize);
+      pyrlog("[%s] Could not allocate %lu bytes in interp dom: %p\n", __func__, basicsize, g);
+    }
     if (g == NULL)
         return PyErr_NoMemory();
     g->gc.gc_refs = GC_UNTRACKED;
@@ -1628,9 +1633,13 @@ PyObject_GC_SecureDel(void *op)
 
     // Pyronia hook: free an object with memdom_free
     // if it's been allocated in any memory domain
+    int freed = 0;
     critical_state_alloc_pre(g);
-    pyr_free_critical_state(g);
+    freed = pyr_free_critical_state(g);
     critical_state_alloc_post(g);
+
+    if (!freed)
+      PyObject_FREE(g);
 }
 
 /* for binary compatibility with 2.2 */
