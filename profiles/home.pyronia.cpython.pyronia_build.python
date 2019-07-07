@@ -16,25 +16,26 @@
 /proc/*/net/psched r,
 /dev/pts/* r,
 /usr/lib/locale/locale-archive r,
-/usr/local/lib/python2.7/* r,
 /home/pyronia/libpyronia/ r,
 /home/pyronia/cpython/ r,
-/home/pyronia/cpython/Lib** rmix,
+/home/pyronia/cpython/Lib** rwmix,
 /home/pyronia/cpython/pyronia_build/** rm,
+/home/pyronia/cpython/pyronia_build/python rix,
 /usr/local/lib/python2.7/site-packages/ r,
-/usr/local/lib/python2.7/site-packages/** rmix,
+/usr/local/lib/python2.7/site-packages** rmix,
 /usr/local/lib/python2.7/dist-packages/ r,
 /usr/local/lib/python2.7/dist-packages/openalpr** rmix,
-/usr/local/lib r,
 /usr/share/zoneinfo/posixrules r,
 /proc/*/mounts rix,
 /proc/*/status r,
 /proc/*/maps r,
 /dev/urandom r,
+/dev/random r,
 /dev/ r,
 /home/ r,
 /dev/null rw,
 /proc/stat r,
+/tmp/* rw,
 /home/pyronia/cpython/benchmarks/** rw,
 /home/pyronia/.local/lib/python2.7/site-packages** rmix,
 /sbin/ldconfig* rix,
@@ -43,9 +44,9 @@
 # TODO: replace these with YOUR resource access rules
 # include /home/pyronia/cpython/install.prof
 
-include /home/pyronia/libpyronia/apps/hello/hello.prof
+# include /home/pyronia/libpyronia/apps/hello/hello.prof
 # include /home/pyronia/libpyronia/apps/twitterPhoto/twitterPhoto.prof
 # include /home/pyronia/libpyronia/apps/alexa/alexa.prof
-# include /home/pyronia/libpyronia/apps/plant_watering/moisture.prof
+include /home/pyronia/libpyronia/apps/plant_watering/moisture.prof
 # include /home/pyronia/cpython/microbenchmarks/test_modules/micro.prof
 }

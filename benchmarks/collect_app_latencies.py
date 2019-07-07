@@ -16,7 +16,7 @@ apps = ['hello', 'twitterPhoto', 'alexa', 'plant_watering']
 apps_path = '/home/pyronia/libpyronia/apps'
 lib_prof_temp = '../profiles/home.pyronia.cpython.pyronia_build.python-lib.prof'
 
-for a in apps[:1]:
+for a in apps[3:]:
     os.system('mv '+lib_prof_temp+'.'+a+' '+lib_prof_temp)
     for x in range (0, runs):
         subprocess.call(['../load_python_profile'])
