@@ -32,6 +32,8 @@ PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
 	(((PyCFunctionObject *)func) -> m_self)
 #define PyCFunction_GET_FLAGS(func) \
 	(((PyCFunctionObject *)func) -> m_ml -> ml_flags)
+#define PyCFunction_GET_MODULE(func) \
+        (((PyCFunctionObject *)func) -> m_module)
 PyAPI_FUNC(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
 
 struct PyMethodDef {

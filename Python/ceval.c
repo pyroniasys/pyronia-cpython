@@ -19,6 +19,7 @@
 #include "pyronia_python.h"
 
 #include <ctype.h>
+#include <stdbool.h>
 
 #ifndef WITH_TSC
 
@@ -313,7 +314,7 @@ PyEval_ReInitThreads(void)
     pending_lock = PyThread_allocate_lock();
     PyThread_acquire_lock(interpreter_lock, 1);
     main_thread = PyThread_get_thread_ident();
-
+    
     /* Update the threading module with the new state.
      */
     tstate = PyThreadState_GET();
@@ -324,6 +325,15 @@ PyEval_ReInitThreads(void)
         PyErr_Clear();
         return;
     }
+#ifdef Py_PYRONIA
+    // Pyronia hook: initialize memdom subsystem and open
+    // stack inspection communication channel
+    int err = -1;
+    if ((err = pyr_init(Pyr_MainMod, LIB_POLICY,
+			Py_Generate_Pyronia_Callstack,
+			acquire_gil, release_gil, true)))
+      Py_FatalError("Pyronia init failed for subproc");
+#endif
     result = PyObject_CallMethod(threading, "_after_fork", NULL);
     if (result == NULL)
         PyErr_WriteUnraisable(threading);
@@ -4384,6 +4394,25 @@ PyEval_GetFuncName(PyObject *func)
 }
 
 const char *
+PyEval_GetModuleName(PyObject *func)
+{
+  if (PyMethod_Check(func))
+    return PyEval_GetModuleName(PyMethod_GET_FUNCTION(func));
+  else if (PyFunction_Check(func)) {
+    return (PyFunction_GET_MODULE(func) ?
+	    PyString_AsString(PyFunction_GET_MODULE(func)) :
+	    "null");
+  }
+  else if (PyCFunction_Check(func)) {
+    return (PyCFunction_GET_MODULE(func) ?
+	    PyString_AsString(PyCFunction_GET_MODULE(func)) :
+	    "null");
+  }
+  else
+    return func->ob_type->tp_name;
+}
+
+const char *
 PyEval_GetFuncDesc(PyObject *func)
 {
     if (PyMethod_Check(func))
@@ -4461,6 +4490,12 @@ call_function(PyObject ***pp_stack, int oparg
     PyObject **pfunc = (*pp_stack) - n - 1;
     PyObject *func = *pfunc;
     PyObject *x, *w;
+    char func_fqn[128];
+
+    const char *func_name = PyEval_GetFuncName(func);
+    const char *mod_name = PyEval_GetModuleName(func);
+    Py_GetFullFuncName(func_fqn, mod_name, func_name);
+    printf("[%s] %s\n", __func__, func_fqn);
     
     /* Always dispatch PyCFunction first, because these are
        presumed to be the most frequent callable object.
@@ -5458,13 +5493,16 @@ pyr_cg_node_t *Py_Generate_Pyronia_Callstack(void) {
 #ifdef Py_PYRONIA_BENCH
   int stack_depth = 0;
 #endif
-  
-  cur_frame = PyEval_GetFrame();
+
+  if (!pyr_interp_tstate)
+    goto fail;
+
+  // Want to actually inspect main interpreter frames, not SI thread's
+  cur_frame = _PyThreadState_GetFrame(pyr_interp_tstate);
 
   printf("[%s] Collecting at frame %p\n", __func__, cur_frame);
   
   while (cur_frame != NULL) {
-    pyr_cg_node_t *next;
     memset(lib_func_name, 0, 128);
 
     char *mod_name = get_module_name(cur_frame);
@@ -5474,21 +5512,24 @@ pyr_cg_node_t *Py_Generate_Pyronia_Callstack(void) {
     }
 
     char *func_name = PyString_AsString(cur_frame->f_code->co_name);
-    snprintf(lib_func_name, strlen(func_name)+strlen(mod_name)+2, "%s.%s", mod_name, func_name);
+    memcpy(lib_func_name, mod_name, strlen(mod_name));
+    memcpy(lib_func_name+strlen(mod_name), ".", 1);
+    memcpy(lib_func_name+strlen(mod_name)+1, func_name, (strlen(func_name) <= (128 - strlen(mod_name)+1) ? strlen(func_name) : (128 - strlen(mod_name)+1)));
 
     printf("[%s] lib function: %s\n", __func__, lib_func_name);
 
     // let's do an optimization, if the previous frame we visited is for the same
     // module, skip adding it
     //if (child && strncmp(mod_name, child->lib, strlen(mod_name))) {
-      err = pyr_new_cg_node(&next, lib_func_name, CAM_DATA, child);
+    // skip adding a node for any functions in the main module
+    if (strncmp(lib_func_name, "__main__.", 9)) {
+      err = pyr_serialize_callstack(lib_func_name);
       if (err) {
-        printf("[%s] Could not create cg node for lib %s\n", __func__, lib_func_name);
+        printf("[%s] Could not serialize node for lib %s\n", __func__, lib_func_name);
         goto fail;
       }
-      printf("[%s] Added cg node for module %s\n", __func__, lib_func_name);
-      child = next;
-      //}
+      pyrlog("[%s] Added cg node for module %s\n", __func__, lib_func_name);
+    }
 #ifdef Py_PYRONIA_BENCH
     stack_depth++;
 #endif

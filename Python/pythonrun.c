@@ -215,10 +215,13 @@ Py_InitializeEx(int install_sigs)
 #ifdef Py_PYRONIA
     // Pyronia hook: initialize memdom subsystem and open
     // stack inspection communication channel
+    pyr_interp_tstate = NULL;
     if ((err = pyr_init(Pyr_MainMod, LIB_POLICY,
 			Py_Generate_Pyronia_Callstack,
-			acquire_gil, release_gil)))
+			acquire_gil, release_gil, false)))
       Py_FatalError("Pyronia init failed");
+    pyr_interp_tstate = tstate;
+    printf("[%s] Main interpreter tstate %p\n", __func__, pyr_interp_tstate);
 #endif
 #ifdef Py_PYRONIA_BENCH
     max_dep_depth = 0;
@@ -587,7 +590,7 @@ Py_Finalize(void)
     // secure state, SI comm and memdoms
     pyr_exit();
 #else
-    printf("[%s] Total frame allocations: %lu bytes\n", __func__, total_frame_alloc);
+    //printf("[%s] Total frame allocations: %lu bytes\n", __func__, total_frame_alloc);
 #endif
 
     call_ll_exitfuncs();

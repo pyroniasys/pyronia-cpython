@@ -157,6 +157,8 @@ PyThread__init_thread(void)
  */
 
 
+#include "pyronia_python.h"
+
 long
 PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
