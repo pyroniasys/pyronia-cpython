@@ -4495,7 +4495,7 @@ call_function(PyObject ***pp_stack, int oparg
     const char *func_name = PyEval_GetFuncName(func);
     const char *mod_name = PyEval_GetModuleName(func);
     Py_GetFullFuncName(func_fqn, mod_name, func_name);
-    printf("[%s] %s\n", __func__, func_fqn);
+    //printf("[%s] %s\n", __func__, func_fqn);
     
     /* Always dispatch PyCFunction first, because these are
        presumed to be the most frequent callable object.
@@ -5494,13 +5494,15 @@ pyr_cg_node_t *Py_Generate_Pyronia_Callstack(void) {
   int stack_depth = 0;
 #endif
 
+  pyrlog("[%s] Collecting callstack from main %p\n", __func__, pyr_interp_tstate);
+
   if (!pyr_interp_tstate)
     goto fail;
 
   // Want to actually inspect main interpreter frames, not SI thread's
   cur_frame = _PyThreadState_GetFrame(pyr_interp_tstate);
 
-  printf("[%s] Collecting at frame %p\n", __func__, cur_frame);
+  pyrlog("[%s] Collecting at frame %p\n", __func__, cur_frame);
   
   while (cur_frame != NULL) {
     memset(lib_func_name, 0, 128);
@@ -5516,7 +5518,7 @@ pyr_cg_node_t *Py_Generate_Pyronia_Callstack(void) {
     memcpy(lib_func_name+strlen(mod_name), ".", 1);
     memcpy(lib_func_name+strlen(mod_name)+1, func_name, (strlen(func_name) <= (128 - strlen(mod_name)+1) ? strlen(func_name) : (128 - strlen(mod_name)+1)));
 
-    printf("[%s] lib function: %s\n", __func__, lib_func_name);
+    pyrlog("[%s] lib function: %s\n", __func__, lib_func_name);
 
     // let's do an optimization, if the previous frame we visited is for the same
     // module, skip adding it

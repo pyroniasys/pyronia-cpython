@@ -221,7 +221,7 @@ Py_InitializeEx(int install_sigs)
 			acquire_gil, release_gil, false)))
       Py_FatalError("Pyronia init failed");
     pyr_interp_tstate = tstate;
-    printf("[%s] Main interpreter tstate %p\n", __func__, pyr_interp_tstate);
+    pyrlog("[%s] Main interpreter tstate %p\n", __func__, pyr_interp_tstate);
 #endif
 #ifdef Py_PYRONIA_BENCH
     max_dep_depth = 0;
