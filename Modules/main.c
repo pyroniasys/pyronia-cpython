@@ -5,8 +5,7 @@
 #include "code.h" /* For CO_FUTURE_DIVISION */
 #include "import.h"
 
-// FIXME: this should be a build flag
-#include <time.h>
+#include <pyronia_lib.h> // pyronia includes all benchmarking utils
 
 #ifdef __VMS
 #include <unixlib.h>
@@ -267,6 +266,11 @@ Py_Main(int argc, char **argv)
     size_t timefile_str_len = 0;
     double exec_time = 0, e2e_exec_time = 0;
     struct timespec start, stop, e2e_start, e2e_stop;
+#endif
+#ifdef Py_PYRONIA
+#ifdef PYRONIA_BENCH
+    init_userspace_benchmarking();
+#endif
 #endif
 
     cf.cf_flags = 0;
@@ -707,13 +711,19 @@ Py_Main(int argc, char **argv)
       strcat(timefile_str, Pyr_MainMod);
       strcat(timefile_str, ".data");
       time_file = fopen(timefile_str, "a+");
-      fprintf(time_file, "%.2f, %.2f, %d\n", exec_time, e2e_exec_time, max_dep_depth);
+      fprintf(time_file, "%.2f, %.2f, %d, ", exec_time, e2e_exec_time, max_dep_depth);
       fclose(time_file);
 #ifdef Py_PYRONIA
     }
 #endif
  done_timing:
 #endif // ends ifdef BENCH
+    
+#ifdef Py_PYRONIA
+#ifdef PYRONIA_BENCH
+    output_userspace_bench(stdout);
+#endif
+#endif
 
 #ifdef RISCOS
     if (Py_RISCOSWimpFlag)

@@ -5485,8 +5485,7 @@ static inline char *get_module_name(PyFrameObject *f) {
  * that can be sent to the kernel as a response to a
  * callstack request.
  */
-pyr_cg_node_t *Py_Generate_Pyronia_Callstack(void) {
-  pyr_cg_node_t *child = NULL;
+int Py_Generate_Pyronia_Callstack(void) {
   int err = -1;
   PyFrameObject *cur_frame = NULL;
   char lib_func_name[128]; // 128 is kinda arbitrary, but we don't expect to have super long names
@@ -5497,7 +5496,7 @@ pyr_cg_node_t *Py_Generate_Pyronia_Callstack(void) {
   pyrlog("[%s] Collecting callstack from main %p\n", __func__, pyr_interp_tstate);
 
   if (!pyr_interp_tstate)
-    goto fail;
+    goto out;
 
   // Want to actually inspect main interpreter frames, not SI thread's
   cur_frame = _PyThreadState_GetFrame(pyr_interp_tstate);
@@ -5510,7 +5509,7 @@ pyr_cg_node_t *Py_Generate_Pyronia_Callstack(void) {
     char *mod_name = get_module_name(cur_frame);
     if (!mod_name) {
       Py_FatalError("Could not get the module name for the current frame\n");
-      goto fail;
+      goto out;
     }
 
     char *func_name = PyString_AsString(cur_frame->f_code->co_name);
@@ -5528,7 +5527,7 @@ pyr_cg_node_t *Py_Generate_Pyronia_Callstack(void) {
       err = pyr_serialize_callstack(lib_func_name);
       if (err) {
         printf("[%s] Could not serialize node for lib %s\n", __func__, lib_func_name);
-        goto fail;
+        goto out;
       }
       pyrlog("[%s] Added cg node for module %s\n", __func__, lib_func_name);
     }
@@ -5543,12 +5542,7 @@ pyr_cg_node_t *Py_Generate_Pyronia_Callstack(void) {
       max_dep_depth = stack_depth;
   }
 #endif
-
-  // this means we haven't started
-
-  return child;
- fail:
-  if (child)
-    pyr_free_callgraph(&child);
-  return NULL;
+  
+ out:
+  return err;
 }

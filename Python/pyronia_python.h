@@ -7,7 +7,6 @@
 #ifndef __PY_PYRONIA_H
 #define __PY_PYRONIA_H
 
-#include <linux/pyronia_mac.h>
 #include <pyronia_lib.h>
 
 #define LIB_POLICY "/home/pyronia/cpython/profiles/home.pyronia.cpython.pyronia_build.python-lib.prof"
@@ -58,6 +57,6 @@ void PyObject_GC_SecureDel(void *);
 #define Py_GetFullFuncName(func_fqn, mod, func)				\
   snprintf(func_fqn, strlen(func)+strlen(mod)+2, "%s.%s", mod, func)
 
-pyr_cg_node_t *Py_Generate_Pyronia_Callstack(void);
+int Py_Generate_Pyronia_Callstack(void);
 
 #endif /* __PY_PYRONIA_H */
