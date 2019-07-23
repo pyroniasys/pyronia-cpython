@@ -5,6 +5,7 @@
 /usr/lib/x86_64-linux-gnu/** rm,
 /lib/x86_64-linux-gnu/libc-2.27.so rm,
 /lib/x86_64-linux-gnu/libpyronia.so rm,
+/lib/x86_64-linux-gnu/libpyronia_opt.so rm,
 /lib/x86_64-linux-gnu/libsmv.so rm,
 /lib/x86_64-linux-gnu/libpthread-2.27.so rm,
 /lib/x86_64-linux-gnu/libnl-genl-3.so.200.24.0 rm,
