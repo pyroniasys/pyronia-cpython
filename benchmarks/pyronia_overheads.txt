@@ -1,0 +1,26 @@
+{
+    "mean e2e latency overhead": {
+        "hello": "0.02 seconds (171.0%)", 
+        "twitterPhoto": "1.18 seconds (409.3%)", 
+        "alexa": "0.98 seconds (411.3%)", 
+        "plant_watering": "0.15 seconds (197.8%)"
+    }, 
+    "mean syscall latency overhead": {
+        "open": {
+            "twitterPhoto": "191.9% (14.89 us)", 
+            "alexa": "175.9% (15.37 us)", 
+            "plant_watering": "178.5% (15.74 us)"
+        }, 
+        "fopen": {
+            "hello": "20.6% (0.71 us)", 
+            "twitterPhoto": "18.5% (0.62 us)", 
+            "alexa": "10.7% (0.40 us)", 
+            "plant_watering": "2.0% (0.09 us)"
+        }, 
+        "connect": {
+            "twitterPhoto": "48.0% (30.90 us)", 
+            "alexa": "60.1% (40.11 us)", 
+            "plant_watering": "-8.4% (-6.20 us)"
+        }
+    }
+}
