@@ -260,17 +260,26 @@ Py_Main(int argc, char **argv)
     int saw_unbuffered_flag = 0;
     PyCompilerFlags cf;
 
-#ifdef Py_PYRONIA_BENCH
+#if defined(Py_PYRONIA_BENCH) || defined(PYRONIA_BENCH) || defined(MEMDOM_BENCH) || defined(PYR_SYSCALL_BENCH)
     FILE *time_file = NULL;
     char *timefile_str = NULL;
     size_t timefile_str_len = 0;
-    double exec_time = 0, e2e_exec_time = 0;
-    struct timespec start, stop, e2e_start, e2e_stop;
+#endif
+    
+#ifdef Py_PYRONIA_BENCH
+    double e2e_exec_time = 0;
+    struct timespec e2e_start, e2e_stop;
 #endif
 #ifdef Py_PYRONIA
 #ifdef PYRONIA_BENCH
     init_userspace_benchmarking();
 #endif
+#ifdef MEMDOM_BENCH
+    init_memdom_benchmarking();
+#endif
+#endif
+#ifdef PYR_SYSCALL_BENCH
+    init_user_syscall_benchmarking();
 #endif
 
     cf.cf_flags = 0;
@@ -564,8 +573,10 @@ Py_Main(int argc, char **argv)
     Py_SetProgramName(argv[0]);
 #endif
     Pyr_MainMod = (module == NULL ? filename : module);
-#ifdef Py_PYRONIA_BENCH
+#if defined(Py_PYRONIA_BENCH) || defined(PYRONIA_BENCH) || defined(MEMDOM_BENCH) || defined(PYR_SYSCALL_BENCH)
     timefile_str_len = strlen(Pyr_MainMod)+5+1;
+#endif
+#ifdef Py_PYRONIA_BENCH
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &e2e_start);
 #endif
     Py_Initialize();
@@ -662,16 +673,10 @@ Py_Main(int argc, char **argv)
                 PyErr_Print();
                 sts = 1;
             } else {
-#ifdef Py_PYRONIA_BENCH
-                clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
-#endif
                 sts = PyRun_AnyFileExFlags(
                     fp,
                     filename == NULL ? "<stdin>" : filename,
                     filename != NULL, &cf) != 0;
-#ifdef Py_PYRONIA_BENCH
-		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
-#endif
             }
         }
 
@@ -697,32 +702,38 @@ Py_Main(int argc, char **argv)
 
 #ifdef Py_PYRONIA_BENCH
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &e2e_stop);
-    exec_time = (stop.tv_sec - start.tv_sec) * 1e6 + (stop.tv_nsec - start.tv_nsec) / 1e3;
     e2e_exec_time = (e2e_stop.tv_sec - e2e_start.tv_sec) * 1e6 + (e2e_stop.tv_nsec - e2e_start.tv_nsec) / 1e3;
+#endif
 
 #ifdef Py_PYRONIA
     if (!pyr_is_interpreter_build()) {
 #endif
-      if((timefile_str = malloc(timefile_str_len)) == NULL){
-	printf("Not recording timing for %s!\n", Pyr_MainMod);
-	goto done_timing;
-      }
-      memset(timefile_str, 0, timefile_str_len);   // ensures the memory is an empty string
-      strcat(timefile_str, Pyr_MainMod);
-      strcat(timefile_str, ".data");
-      time_file = fopen(timefile_str, "a+");
-      fprintf(time_file, "%.2f, %.2f, %d, ", exec_time, e2e_exec_time, max_dep_depth);
-      fclose(time_file);
-#ifdef Py_PYRONIA
-    }
+#if defined(Py_PYRONIA_BENCH) || defined(PYRONIA_BENCH) || defined(MEMDOM_BENCH) || defined(PYR_SYSCALL_BENCH)
+      if((timefile_str = malloc(timefile_str_len))){
+	memset(timefile_str, 0, timefile_str_len);   // ensures the memory is an empty string
+	strcat(timefile_str, Pyr_MainMod);
+	strcat(timefile_str, ".data");
+	time_file = fopen(timefile_str, "a+");
+#ifdef Py_PYRONIA_BENCH
+	fprintf(time_file, "%.2f %d, \n", e2e_exec_time, max_dep_depth);
 #endif
- done_timing:
-#endif // ends ifdef BENCH
-    
 #ifdef Py_PYRONIA
 #ifdef PYRONIA_BENCH
-    output_userspace_bench(stdout);
+	output_userspace_bench(time_file);
 #endif
+#ifdef MEMDOM_BENCH
+	output_memdom_bench(time_file);
+#endif
+#endif
+#ifdef PYR_SYSCALL_BENCH
+	output_user_syscall_bench(time_file);
+#endif
+	if (time_file)
+	  fclose(time_file);
+      }
+#endif
+#ifdef Py_PYRONIA
+    }
 #endif
 
 #ifdef RISCOS

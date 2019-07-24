@@ -13,5 +13,5 @@ mkdir -p pyronia_build
 
 cd pyronia_build
 
-../configure --enable-unicode=ucs4 --with-libs='-lnl-3 -lnl-genl-3 -lsmv -lpyronia' --with-pyronia --with-pyronia-benchmarking
+../configure --enable-unicode=ucs4 --with-libs='-lnl-3 -lnl-genl-3 -lsmv -lpyronia' --with-pyronia
 make
