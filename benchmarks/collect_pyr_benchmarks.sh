@@ -1,6 +1,6 @@
 #!/bin/bash
 
-runs=25
+runs=5
 
 if [ $# -ne 1 ]; then
     echo 'Usage: ./collect_pyr_benchmarks.sh <benchmark type>'
