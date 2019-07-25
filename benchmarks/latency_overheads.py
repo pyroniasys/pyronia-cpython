@@ -1,6 +1,7 @@
 import json
 from collections import OrderedDict
 import sys
+from statistics import mean
 
 def calc_diff(new, orig):
     return float(new)-float(orig)
@@ -13,9 +14,9 @@ def calc_multi(new, orig):
 
 app_path = '/home/marcela/Research/lib-isolation/cpython'
 
-apps = ['hello', 'twitterPhoto', 'alexa', 'plant_watering']
+apps = ['hello', 'alexa', 'plant_watering', 'twitterPhoto']
 
-bench_types = ['e2e-latency', 'syscall-latency']
+bench_types = ['e2e-latency', 'syscall-latency', 'iter-latency']
 
 datasets = ['nopyr', 'pyr']
 
@@ -24,6 +25,7 @@ syscalls = ['open', 'fopen', 'connect']
 overheads = OrderedDict()
 overheads['mean e2e latency overhead'] = OrderedDict()
 overheads['mean syscall latency overhead'] = OrderedDict()
+overheads['mean per-iter latency overhead'] = OrderedDict()
 for bt in bench_types:
     nopyr_data = dict()
     pyr_data = dict()
@@ -38,7 +40,7 @@ for bt in bench_types:
             pyr_mean = float(pyr_data[a]['mean'][0])/1000000.0
             nopyr_mean = float(nopyr_data[a]['mean'][0])/1000000.0
 
-            overheads['mean e2e latency overhead'][a] = ("%.2f seconds (%.1f%%)" % (calc_diff(pyr_mean, nopyr_mean), calc_percent(pyr_mean, nopyr_mean)))
+            overheads['mean e2e latency overhead'][a] = ("%.2f seconds (%.1fx)" % (calc_diff(pyr_mean, nopyr_mean), calc_multi(pyr_mean, nopyr_mean)))
     elif bt == 'syscall-latency':
         overheads['mean syscall latency overhead']['open'] = OrderedDict()
         overheads['mean syscall latency overhead']['fopen'] = OrderedDict()
@@ -49,6 +51,13 @@ for bt in bench_types:
                 nopyr_mean = float(nopyr_data[a][s]['stats']['mean'])
                 if nopyr_mean > 0.0:
                     overheads['mean syscall latency overhead'][s][a] = ("%.1f%% (%.2f us)" % (calc_percent(pyr_mean, nopyr_mean), calc_diff(pyr_mean, nopyr_mean)))
+    elif bt == 'iter-latency':
+        for a in apps[1:]:
+            pyr_mean = [float(t) for t in pyr_data[a]['mean']]
+            pyr_mean = mean(pyr_mean[5:])
+            nopyr_mean = [float(t) for t in nopyr_data[a]['mean']]
+            nopyr_mean = mean(nopyr_mean[5:])
+            overheads['mean per-iter latency overhead'][a] = ("%.2f seconds (%.1fx)" % (calc_diff(pyr_mean, nopyr_mean), calc_multi(pyr_mean, nopyr_mean)))
 
 out = open(app_path+'/benchmarks/pyronia_overheads.txt', 'w+')
 json.dump(overheads, out, indent=4)
