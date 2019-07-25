@@ -94,3 +94,4 @@ Tools/ssl/win32
 .vs/
 .vscode/
 debug/
+pyronia_build/
