@@ -1,0 +1,71 @@
+{
+    "alexa": {
+        "total usage": {
+            "min": 151388,
+            "mean": 151620.4,
+            "median": 151416,
+            "max": 151972,
+            "stddev": 305.89671459497566
+        },
+        "metadata usage": {
+            "min": 45512,
+            "mean": 45684.8,
+            "median": 45512,
+            "max": 45968,
+            "stddev": 237.2239448285101
+        },
+        "num pages": {
+            "min": 141,
+            "mean": 141.4,
+            "median": 141,
+            "max": 142,
+            "stddev": 0.5477225575051661
+        }
+    },
+    "hello": {
+        "total usage": {
+            "min": 22824,
+            "mean": 22824,
+            "median": 22824,
+            "max": 22824,
+            "stddev": 0.0
+        },
+        "metadata usage": {
+            "min": 6392,
+            "mean": 6392,
+            "median": 6392,
+            "max": 6392,
+            "stddev": 0.0
+        },
+        "num pages": {
+            "min": 17,
+            "mean": 17,
+            "median": 17,
+            "max": 17,
+            "stddev": 0.0
+        }
+    },
+    "plant_watering": {
+        "total usage": {
+            "min": 70030,
+            "mean": 70030.8,
+            "median": 70031,
+            "max": 70032,
+            "stddev": 0.8366600265340756
+        },
+        "metadata usage": {
+            "min": 19520,
+            "mean": 19520,
+            "median": 19520,
+            "max": 19520,
+            "stddev": 0.0
+        },
+        "num pages": {
+            "min": 54,
+            "mean": 54,
+            "median": 54,
+            "max": 54,
+            "stddev": 0.0
+        }
+    }
+}
