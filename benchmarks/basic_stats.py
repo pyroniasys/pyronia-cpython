@@ -4,9 +4,9 @@ from collections import OrderedDict
 
 app_path = '/home/marcela/Research/lib-isolation/cpython'
 
-apps = ['hello', 'twitterPhoto', 'alexa', 'plant_watering']
+apps = ['hello', 'alexa', 'plant_watering', 'twitterPhoto']
 
-bench_types = ['e2e-latency', 'syscall-latency']
+bench_types = ['e2e-latency', 'syscall-latency', 'iter-latency']
 
 datasets = ['nopyr', 'pyr']
 
@@ -29,41 +29,27 @@ def get_e2e_latency_stats(latencies):
 syscalls = ['open', 'fopen', 'connect']
 
 def get_syscall_latency_stats(latencies):
-    open_times = []
-    fopen_times = []
-    connect_times = []
-    open_idx = 0
-    fopen_idx = 1
-    connect_idx = 2
+    stats = OrderedDict()
+    for s in syscalls:
+        stats[s] = OrderedDict()
+        stats[s]['num'] = []
+        stats[s]['times'] = []
     for l in latencies:
         run_data = l.split(',')
-        open_bench = run_data[open_idx].split(' ')
-        fopen_bench = run_data[fopen_idx].split(' ')
-        connect_bench = run_data[connect_idx].split(' ')
-        open_num = float(open_bench[0].strip())
-        fopen_num = float(fopen_bench[0].strip())
-        connect_num = float(connect_bench[0].strip())
-        if open_num > 0.0:
-            open_times.append(float(open_bench[1].strip())/open_num)
-        if fopen_num > 0.0:
-            fopen_times.append(float(fopen_bench[1].strip())/fopen_num)
-        if connect_num > 0.0:
-            connect_times.append(float(connect_bench[1].strip())/connect_num)
+        idx = 0
+        if len(run_data) != len(syscalls):
+            exit(-1)
+        for s in syscalls:
+            bench = run_data[idx].split(' ')
+            num = float(bench[0].strip())
+            stats[s]['num'].append(num)
+            if num > 0.0:
+                stats[s]['times'].append(float(bench[1].strip())/num)
+            idx += 1
 
-    if len(open_times) == 0:
-        open_times = [0.0, 0.0]
-    if len(fopen_times) == 0:
-        fopen_times = [0.0, 0.0]
-    if len(connect_times) == 0:
-        connect_times = [0.0, 0.0]
-
-    stats = OrderedDict()
-    stats['open'] = OrderedDict()
-    stats['fopen'] = OrderedDict()
-    stats['connect'] = OrderedDict()
-    stats['open']['times'] = open_times;
-    stats['fopen']['times'] = fopen_times;
-    stats['connect']['times'] = connect_times
+    for s in syscalls:
+        if len(stats[s]['times']) == 0:
+            stats[s]['times'] = [0.0, 0.0]
 
     for s in stats:
         stats[s]['stats'] = OrderedDict()
@@ -72,6 +58,7 @@ def get_syscall_latency_stats(latencies):
         stats[s]['stats']['median'] = "%.2f" % median(stats[s]['times'])
         stats[s]['stats']['max'] = "%.2f" % max(stats[s]['times'])
         stats[s]['stats']['stddev'] = "%.2f" % stdev(stats[s]['times'])
+        stats[s]['stats']['median num'] = "%.2f" % median(stats[s]['num'])
     return stats
 
 def get_iters_latency_stats(latencies):
@@ -81,19 +68,19 @@ def get_iters_latency_stats(latencies):
     for l in latencies:
         run_data = l.split(' ')
         for i in range(0, len(run_data)):
-            iter_times[str(i)].append(float(run_data[i].strip()))
-
+            iter_times[str(i)].append(float(run_data[i].strip())*1000000.0)
+            
     iter_means = []
     iter_medians = []
     iter_stddev = []
     iter_mins = []
     iter_max = []
     for i,times in iter_times.items():
-        iter_mins.append("%.2f" % min(times))
-        iter_means.append("%.2f" % mean(times))
-        iter_medians.append("%.2f" % median(times))
-        iter_max.append("%.2f" % max(times))
-        iter_stddev.append("%.2f" % stdev(times))
+        iter_mins.append("%.1f" % min(times))
+        iter_means.append("%.1f" % mean(times))
+        iter_medians.append("%.1f" % median(times))
+        iter_max.append("%.1f" % max(times))
+        iter_stddev.append("%.1f" % stdev(times))
             
     stats = OrderedDict()
     stats['min'] = iter_mins
@@ -103,10 +90,10 @@ def get_iters_latency_stats(latencies):
     stats['stddev'] = iter_stddev
     return stats
 
-for d in datasets:
-    for bt in bench_types:
+for d in datasets[:1]:
+    for bt in bench_types[2:]:
         app_stats = OrderedDict()
-        for a in apps:
+        for a in apps[1:]:
             f = open(app_path+'/benchmarks/'+a+'/'+a+'-'+bt+'-'+d+'.data', 'r')
             latencies = f.readlines()
             f.close()
@@ -115,7 +102,7 @@ for d in datasets:
                 stats = get_e2e_latency_stats(latencies)
             elif bt == 'syscall-latency':
                 stats = get_syscall_latency_stats(latencies)
-            elif bt == 'iters-latency':
+            elif bt == 'iter-latency':
                 stats = get_iters_latency_stats(latencies)
 
             app_stats[a] = stats
