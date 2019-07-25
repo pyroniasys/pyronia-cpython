@@ -1,0 +1,94 @@
+{
+    "alexa": {
+        "total usage": {
+            "min": 125312, 
+            "mean": 125512.48, 
+            "median": 125657, 
+            "max": 126170, 
+            "stddev": 220.2746618807226
+        }, 
+        "metadata usage": {
+            "min": 45056, 
+            "mean": 45208.64, 
+            "median": 45320, 
+            "max": 45704, 
+            "stddev": 167.5536928867878
+        }, 
+        "num pages": {
+            "min": 140, 
+            "mean": 140.04, 
+            "median": 140, 
+            "max": 141, 
+            "stddev": 0.2
+        }
+    }, 
+    "hello": {
+        "total usage": {
+            "min": 22638, 
+            "mean": 22638.0, 
+            "median": 22638, 
+            "max": 22638, 
+            "stddev": 0.0
+        }, 
+        "metadata usage": {
+            "min": 6392, 
+            "mean": 6392.0, 
+            "median": 6392, 
+            "max": 6392, 
+            "stddev": 0.0
+        }, 
+        "num pages": {
+            "min": 17, 
+            "mean": 17.0, 
+            "median": 17, 
+            "max": 17, 
+            "stddev": 0.0
+        }
+    }, 
+    "plant_watering": {
+        "total usage": {
+            "min": 69379, 
+            "mean": 69426.04, 
+            "median": 69379, 
+            "max": 69547, 
+            "stddev": 76.98727167525811
+        }, 
+        "metadata usage": {
+            "min": 18968, 
+            "mean": 19015.04, 
+            "median": 18968, 
+            "max": 19136, 
+            "stddev": 76.98727167525811
+        }, 
+        "num pages": {
+            "min": 53, 
+            "mean": 53.0, 
+            "median": 53, 
+            "max": 53, 
+            "stddev": 0.0
+        }
+    }, 
+    "twitterPhoto": {
+        "total usage": {
+            "min": 179870, 
+            "mean": 179918.0, 
+            "median": 179870, 
+            "max": 180206, 
+            "stddev": 75.8946638440411
+        }, 
+        "metadata usage": {
+            "min": 69752, 
+            "mean": 69800.0, 
+            "median": 69752, 
+            "max": 70088, 
+            "stddev": 75.8946638440411
+        }, 
+        "num pages": {
+            "min": 228, 
+            "mean": 228.04, 
+            "median": 228, 
+            "max": 229, 
+            "stddev": 0.2
+        }
+    }
+}

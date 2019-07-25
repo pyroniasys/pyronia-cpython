@@ -7,18 +7,18 @@ data_path = os.path.expanduser('~')+'/Research/lib-isolation/cpython/'
 
 apps = ['alexa', 'hello', 'plant_watering', 'twitterPhoto']
 
-outfile = 'benchmarks/app_memdom_stats.txt'
+outfile = 'benchmarks/app_memdom-iter_stats.txt'
 
 runs = 25
 
 app_stats = OrderedDict()
 
-for a in apps:
+for a in apps[:3]:
     num_memdoms = []
     total_allocs = []
     total_metadata_allocs = []
 
-    f = open(data_path+'benchmarks/'+a+'/'+a+'-memusage-pyr.data', 'r')
+    f = open(data_path+'benchmarks/'+a+'/'+a+'-memusage-iter-pyr.data', 'r')
     mem_data = [l.strip() for l in f.readlines()]
     f.close()
 
