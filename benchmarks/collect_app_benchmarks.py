@@ -4,7 +4,7 @@ import os
 import sys
 import subprocess
 
-runs = 25
+runs = 1
 
 if len(sys.argv) != 2:
     print('Usage: python collect_app_benchmarks.py <benchmark type>')
@@ -12,10 +12,10 @@ if len(sys.argv) != 2:
     
 bench_type = sys.argv[1]
 
-apps = ['hello', 'twitterPhoto', 'alexa', 'plant_watering']
+apps = ['alexa', 'plant_watering', 'twitterPhoto']
 apps_path = '/home/pyronia/libpyronia/apps'
 
-for a in apps:
+for a in apps[2:]:
     for x in range (0, runs):
         p = subprocess.call(['../pyronia_build/python', apps_path+'/'+a+'/'+a+'.py'])
         print('Finished run '+str(x+1)+' for app '+a)
