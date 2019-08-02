@@ -860,44 +860,54 @@ PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
     } while (0)
 
 #else
-#define Py_CLEAR(op)                            \
-    do {                                        \
-        if (op) {                               \
-            PyObject *_py_tmp = (PyObject *)(op);               \
-	    int is_crit = pyr_is_critical_state(op);		\
-	    if (is_crit)					\
-	      critical_state_alloc_pre(op);			\
-            (op) = NULL;					\
-	    if (is_crit)					\
-	      critical_state_alloc_post(op);			\
-            Py_DECREF(_py_tmp);					\
-        }                                       \
-    } while (0)
+#include "objimpl.h"
+#define Py_CLEAR(op)							\
+      do {								\
+	if (op) {							\
+	  PyObject *_py_tmp = (PyObject *)(op);				\
+	  PyObject *_old = _py_tmp;					\
+	  int is_critical = 0;						\
+	  if (pyr_is_critical_state(_old)) {				\
+	    is_critical = 1;						\
+	    critical_state_alloc_pre(_old);				\
+	  }								\
+	  (op) = NULL;							\
+	  Py_DECREF(_py_tmp);						\
+	  if (is_critical) \
+	    critical_state_alloc_post(_old);				\
+	}								\
+      } while (0)
 
 #define Py_SETREF(op, op2)                      \
-  do {						\
-        PyObject *_py_tmp = (PyObject *)(op);   \
-        int is_crit = pyr_is_critical_state(op);		\
-	if (is_crit)						\
-	  critical_state_alloc_pre(op);				\
-        (op) = (op2);						\
-	if (is_crit)						\
-	  critical_state_alloc_post(op);				\
-        Py_DECREF(_py_tmp);					\
+     do {					\
+       PyObject *_py_tmp = (PyObject *)(op);				\
+       PyObject *_old = _py_tmp;					\
+       int is_critical = 0;						\
+       if (PyObject_IS_GC(_old) && _Py_AS_GC(_old)->gc.pyr_protected) {	\
+	 is_critical = 1;						\
+	 critical_state_alloc_pre(_old);				\
+       }								\
+       (op) = (op2);							\
+       Py_DECREF(_py_tmp);						\
+       if (is_critical)	\
+	 critical_state_alloc_post(_old);				\
   } while (0)
 
-#define Py_XSETREF(op, op2)                     \
-    do {                                        \
-        PyObject *_py_tmp = (PyObject *)(op);   \
-	int is_crit = pyr_is_critical_state(op);		\
-	if (is_crit)						\
-	  critical_state_alloc_pre(op);				\
-	(op) = (op2);						\
-	if (is_crit)						\
-	  critical_state_alloc_post(op);				\
-        Py_XDECREF(_py_tmp);					\
+#define Py_XSETREF(op, op2)						\
+    do {								\
+      PyObject *_py_tmp = (PyObject *)(op);				\
+      PyObject *_old = _py_tmp;						\
+      int is_critical = 0;						\
+      if (pyr_is_critical_state(_old)) { \
+	is_critical = 1;						\
+	critical_state_alloc_pre(_old);					\
+      }									\
+      (op) = (op2);							\
+      Py_XDECREF(_py_tmp);						\
+      if (is_critical)	\
+	critical_state_alloc_post(_old);				\
     } while (0)
-  
+    
 #endif /* ifndef Py_PYRONIA */
   
 /*

@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "structmember.h"
+#include "../Python/pyronia_python.h"
 
 /* Free list for method objects to save malloc/free overhead
  * The im_self element is used to chain the elements.
@@ -56,6 +57,7 @@ PyClass_New(PyObject *bases, PyObject *dict, PyObject *name)
                         "PyClass_New: dict must be a dictionary");
         return NULL;
     }
+    PyDict_ProtectedWrite(dict, 1);
     if (PyDict_GetItem(dict, docstr) == NULL) {
         if (PyDict_SetItem(dict, docstr, Py_None) < 0)
             return NULL;
@@ -70,6 +72,7 @@ PyClass_New(PyObject *bases, PyObject *dict, PyObject *name)
             }
         }
     }
+    PyDict_ProtectedWrite(dict, 0);
     if (bases == NULL) {
         bases = PyTuple_New(0);
         if (bases == NULL)

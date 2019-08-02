@@ -254,6 +254,7 @@ typedef union _gc_head {
         union _gc_head *gc_next;
         union _gc_head *gc_prev;
         Py_ssize_t gc_refs;
+        int pyr_protected;
     } gc;
     long double dummy;  /* force worst-case alignment */
 } PyGC_Head;
@@ -275,7 +276,11 @@ extern PyGC_Head *_PyGC_generation0;
     g->gc.gc_refs = _PyGC_REFS_REACHABLE; \
     g->gc.gc_next = _PyGC_generation0; \
     g->gc.gc_prev = _PyGC_generation0->gc.gc_prev; \
+    if (g->gc.gc_prev->gc.pyr_protected)	   \
+      critical_state_alloc_pre(g->gc.gc_prev);	   \
     g->gc.gc_prev->gc.gc_next = g; \
+    if (g->gc.gc_prev->gc.pyr_protected)	   \
+      critical_state_alloc_post(g->gc.gc_prev);	   \
     _PyGC_generation0->gc.gc_prev = g; \
     } while (0);
 
@@ -289,10 +294,16 @@ extern PyGC_Head *_PyGC_generation0;
     PyGC_Head *g = _Py_AS_GC(o); \
     assert(g->gc.gc_refs != _PyGC_REFS_UNTRACKED); \
     g->gc.gc_refs = _PyGC_REFS_UNTRACKED; \
-    critical_state_alloc_pre(g->gc.gc_next);	\
+    if (g->gc.gc_next->gc.pyr_protected)       \
+      critical_state_alloc_pre(g->gc.gc_next); \
+    if (g->gc.gc_prev->gc.pyr_protected)       \
+      critical_state_alloc_pre(g->gc.gc_prev); \
     g->gc.gc_prev->gc.gc_next = g->gc.gc_next; \
     g->gc.gc_next->gc.gc_prev = g->gc.gc_prev; \
-    critical_state_alloc_post(g->gc.gc_next);	\
+    if (g->gc.gc_prev->gc.pyr_protected)       \
+      critical_state_alloc_post(g->gc.gc_prev); \
+    if (g->gc.gc_next->gc.pyr_protected)       \
+      critical_state_alloc_post(g->gc.gc_next); \
     g->gc.gc_next = NULL;			\
   } while (0);
 

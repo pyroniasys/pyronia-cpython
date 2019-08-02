@@ -136,8 +136,10 @@ _PyModule_Clear(PyObject *m)
             if (s[0] != '_' || strcmp(s, "__builtins__") != 0) {
                 if (Py_VerboseFlag > 1)
                     PySys_WriteStderr("#   clear[2] %s\n", s);
+		critical_state_alloc_pre(NULL);
                 if (PyDict_SetItem(d, key, Py_None) != 0)
                     PyErr_Clear();
+		critical_state_alloc_pre(NULL);
             }
         }
     }

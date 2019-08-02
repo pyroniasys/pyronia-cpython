@@ -209,6 +209,7 @@ show_track(void)
 
 #define INIT_NONZERO_DICT_SLOTS(mp) do {                                \
     (mp)->ma_table = (mp)->ma_smalltable;                               \
+    (mp)->ma_table_protected = 0;					\
     (mp)->ma_mask = PyDict_MINSIZE - 1;                                 \
     } while(0)
 
@@ -291,6 +292,99 @@ PyDict_New(void)
 #endif
     return (PyObject *)mp;
 }
+
+#ifdef Py_PYRONIA
+#define INIT_NONZERO_PROTECTED_DICT_SLOTS(mp) do {			\
+    (mp)->ma_table = pyr_alloc_critical_runtime_state(sizeof(PyDictObject)*PyDict_MINSIZE); \
+    (mp)->ma_table_protected = pyr_is_critical_state((mp)->ma_table);	\
+    (mp)->ma_mask = PyDict_MINSIZE - 1;                                 \
+    } while(0)
+
+#define EMPTY_PROTECTED_TO_MINSIZE(mp) do {                                       \
+    memset((mp)->ma_smalltable, 0, sizeof((mp)->ma_smalltable));        \
+    (mp)->ma_used = (mp)->ma_fill = 0;                                  \
+    INIT_NONZERO_PROTECTED_DICT_SLOTS(mp);                                        \
+    } while(0)
+
+void PyDict_ProtectedWrite(register PyObject *op, int pre)
+{
+  /*
+  PyDictEntry *table = NULL;
+    if (!PyDict_Check(op)) {
+        return;
+    }
+    table = ((PyDictObject *)op)->ma_table;
+    if (table && ((PyDictObject *)op)->ma_table_protected) {
+      if (pre) {
+	critical_state_alloc_pre(table);
+      }
+      else {
+	critical_state_alloc_post(table);
+      }
+      }
+  */
+}
+
+/*
+PyObject *
+PyDict_ProtectedNew(void)
+{
+    register PyDictObject *mp;
+    if (dummy == NULL) { /* Auto-initialize dummy 
+        dummy = PyString_FromString("<dummy key>");
+        if (dummy == NULL)
+            return NULL;
+#ifdef SHOW_CONVERSION_COUNTS
+        Py_AtExit(show_counts);
+#endif
+#ifdef SHOW_ALLOC_COUNT
+        Py_AtExit(show_alloc);
+#endif
+#ifdef SHOW_TRACK_COUNT
+        Py_AtExit(show_track);
+#endif
+    }
+    if (numfree) {
+        mp = free_list[--numfree];
+        assert (mp != NULL);
+        assert (Py_TYPE(mp) == &PyDict_Type);
+        _Py_NewReference((PyObject *)mp);
+        if (mp->ma_fill) {
+            EMPTY_PROTECTED_TO_MINSIZE(mp);
+        } else {
+            /* At least set ma_table and ma_mask; these are wrong
+               if an empty but presized dict is added to freelist 
+            INIT_NONZERO_PROTECTED_DICT_SLOTS(mp);
+        }
+        assert (mp->ma_used == 0);
+        assert (mp->ma_mask == PyDict_MINSIZE - 1);
+#ifdef SHOW_ALLOC_COUNT
+        count_reuse++;
+#endif
+    } else {
+        mp = PyObject_GC_New(PyDictObject, &PyDict_Type);
+        if (mp == NULL)
+            return NULL;
+        EMPTY_PROTECTED_TO_MINSIZE(mp);
+#ifdef SHOW_ALLOC_COUNT
+        count_alloc++;
+#endif
+    }
+    mp->ma_lookup = lookdict_string;
+#ifdef SHOW_TRACK_COUNT
+    count_untracked++;
+#endif
+#ifdef SHOW_CONVERSION_COUNTS
+    ++created;
+#endif
+    return (PyObject *)mp;
+}
+*/
+PyObject *
+PyDict_ProtectedNew(void) {
+  return PyDict_New();
+}
+#endif
 
 /*
 The basic lookup function used by all operations.
@@ -601,6 +695,7 @@ dictresize(PyDictObject *mp, Py_ssize_t minused)
     PyDictEntry *oldtable, *newtable, *ep;
     Py_ssize_t i;
     int is_oldtable_malloced;
+    int is_oldtable_protected;
     PyDictEntry small_copy[PyDict_MINSIZE];
 
     assert(minused >= 0);
@@ -619,8 +714,20 @@ dictresize(PyDictObject *mp, Py_ssize_t minused)
     oldtable = mp->ma_table;
     assert(oldtable != NULL);
     is_oldtable_malloced = oldtable != mp->ma_smalltable;
+    is_oldtable_protected = mp->ma_table_protected;
 
     if (newsize == PyDict_MINSIZE) {
+#ifdef Py_PYRONIA
+      /*
+        if (!pyr_is_interpreter_build() && is_oldtable_protected) {
+	  newtable = pyr_alloc_critical_runtime_state(sizeof(PyDictEntry)*PyDict_MINSIZE);
+	  if (newtable != NULL && newtable != (void *)0x1) {
+	    mp->ma_table_protected = 1;
+	    goto copy;
+	  }
+	}
+      */
+#endif
         /* A large table is shrinking, or we can't get any smaller. */
         newtable = mp->ma_smalltable;
         if (newtable == oldtable) {
@@ -638,19 +745,34 @@ dictresize(PyDictObject *mp, Py_ssize_t minused)
             memcpy(small_copy, oldtable, sizeof(small_copy));
             oldtable = small_copy;
         }
+	mp->ma_table_protected = 0;
     }
     else {
+#ifdef Py_PYRONIA
+      /*if (!pyr_is_interpreter_build() && is_oldtable_protected) {
+	  newtable = pyr_alloc_critical_runtime_state(sizeof(PyDictEntry)*newsize);
+	  if (newtable != NULL && newtable != (void *)0x1) {
+	    mp->ma_table_protected = 1;
+	    goto copy;
+	  }
+	  }*/
+#endif
         newtable = PyMem_NEW(PyDictEntry, newsize);
         if (newtable == NULL) {
             PyErr_NoMemory();
             return -1;
         }
+	mp->ma_table_protected = 0;
     }
 
+#ifdef Py_PYRONIA
+    copy:
+#endif
     /* Make the dict empty, using the new table. */
     assert(newtable != oldtable);
     mp->ma_table = newtable;
     mp->ma_mask = newsize - 1;
+    //critical_state_alloc_pre(newtable);
     memset(newtable, 0, sizeof(PyDictEntry) * newsize);
     mp->ma_used = 0;
     i = mp->ma_fill;
@@ -671,7 +793,18 @@ dictresize(PyDictObject *mp, Py_ssize_t minused)
         }
         /* else key == value == NULL:  nothing to do */
     }
+    //critical_state_alloc_post(newtable);
 
+#ifdef Py_PYRONIA
+    /*
+    if (!pyr_is_interpreter_build() && is_oldtable_protected) {
+      critical_state_alloc_pre(oldtable);
+      pyr_free_critical_state(oldtable);
+      critical_state_alloc_post(oldtable);
+      return 0;
+      }*/
+#endif
+    
     if (is_oldtable_malloced)
         PyMem_DEL(oldtable);
     return 0;
@@ -936,7 +1069,7 @@ PyDict_Clear(PyObject *op)
 {
     PyDictObject *mp;
     PyDictEntry *ep, *table;
-    int table_is_malloced;
+    int table_is_malloced, table_protected;
     Py_ssize_t fill;
     PyDictEntry small_copy[PyDict_MINSIZE];
 #ifdef Py_DEBUG
@@ -954,6 +1087,7 @@ PyDict_Clear(PyObject *op)
     table = mp->ma_table;
     assert(table != NULL);
     table_is_malloced = table != mp->ma_smalltable;
+    table_protected = mp->ma_table_protected;
 
     /* This is delicate.  During the process of clearing the dict,
      * decrefs can cause the dict to mutate.  To avoid fatal confusion
@@ -962,6 +1096,12 @@ PyDict_Clear(PyObject *op)
      * clearing.
      */
     fill = mp->ma_fill;
+    //#ifdef Py_PYRONIA
+    /*
+    if (table_protected)
+      EMPTY_PROTECTED_TO_MINSIZE(mp);
+    else if (table_is_malloced)
+    #else*/
     if (table_is_malloced)
         EMPTY_TO_MINSIZE(mp);
 
@@ -985,17 +1125,28 @@ PyDict_Clear(PyObject *op)
         assert(i < n);
         ++i;
 #endif
+	//critical_state_alloc_pre(ep);
         if (ep->me_key) {
             --fill;
             Py_DECREF(ep->me_key);
             Py_XDECREF(ep->me_value);
         }
+	//critical_state_alloc_post(ep);
 #ifdef Py_DEBUG
         else
             assert(ep->me_value == NULL);
 #endif
     }
 
+    /*#ifdef Py_PYRONIA
+    if (table_protected) {
+      table = mp->ma_table;
+      critical_state_alloc_pre(table);
+      pyr_free_critical_state(table);
+      critical_state_alloc_post(table);
+    }
+    else if (table_is_malloced)
+    #else*/
     if (table_is_malloced)
         PyMem_DEL(table);
 }
@@ -1076,6 +1227,8 @@ dict_dealloc(register PyDictObject *mp)
 {
     register PyDictEntry *ep;
     Py_ssize_t fill = mp->ma_fill;
+    int table_protected = mp->ma_table_protected;
+    PyDictEntry *oldtable;
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(mp);
     Py_TRASHCAN_SAFE_BEGIN(mp)
@@ -1086,6 +1239,16 @@ dict_dealloc(register PyDictObject *mp)
             Py_XDECREF(ep->me_value);
         }
     }
+    /*
+#ifdef Py_PYRONIA
+    if (table_protected) {
+      oldtable = mp->ma_table;
+      critical_state_alloc_pre(oldtable);
+      pyr_free_critical_state(mp->ma_table);
+      critical_state_alloc_post(oldtable);
+    }
+    else if (mp->ma_table != mp->ma_smalltable)
+    #else*/
     if (mp->ma_table != mp->ma_smalltable)
         PyMem_DEL(mp->ma_table);
     if (numfree < PyDict_MAXFREELIST && Py_TYPE(mp) == &PyDict_Type)
@@ -1665,6 +1828,7 @@ PyDict_Merge(PyObject *a, PyObject *b, int override)
            if (dictresize(mp, (mp->ma_used + other->ma_used)*2) != 0)
                return -1;
         }
+	PyDict_ProtectedWrite(mp, 1);
         for (i = 0; i <= other->ma_mask; i++) {
             entry = &other->ma_table[i];
             if (entry->me_value != NULL &&
@@ -1678,6 +1842,7 @@ PyDict_Merge(PyObject *a, PyObject *b, int override)
                     return -1;
             }
         }
+	PyDict_ProtectedWrite(mp, 0);
     }
     else {
         /* Do it the generic, slower way */
@@ -1741,7 +1906,12 @@ PyDict_Copy(PyObject *o)
         PyErr_BadInternalCall();
         return NULL;
     }
-    copy = PyDict_New();
+#ifdef Py_PYRONIA
+    if (!pyr_is_interpreter_build() && ((PyDictObject *)o)->ma_table_protected)
+      copy = PyDict_ProtectedNew();
+    else
+#endif
+      copy = PyDict_New();
     if (copy == NULL)
         return NULL;
     if (PyDict_Merge(copy, o, 1) == 0)

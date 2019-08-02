@@ -58,10 +58,8 @@ WARN_GET_SET(f_exc_value)
 static PyObject *
 frame_getlocals(PyFrameObject *f, void *closure)
 {
-    critical_state_alloc_pre(f);
     PyFrame_FastToLocals(f);
     Py_INCREF(f->f_locals);
-    critical_state_alloc_post(f);
     return f->f_locals;
 }
 
@@ -469,8 +467,9 @@ frame_dealloc(PyFrameObject *f)
     /* Kill all local variables */
     valuestack = f->f_valuestack;
     for (p = f->f_localsplus; p < valuestack; p++) {
-        critical_state_alloc_pre(*p);
+        critical_state_alloc_pre(p);
         Py_CLEAR(*p);
+	critical_state_alloc_post(p);
     }
 
     /* Free stack */
@@ -480,7 +479,9 @@ frame_dealloc(PyFrameObject *f)
       }	
     }
 
+    critical_state_alloc_pre(f->f_back);
     Py_XDECREF(f->f_back);
+    critical_state_alloc_post(f->f_back);
     Py_DECREF(f->f_builtins);
     Py_DECREF(f->f_globals);
     Py_CLEAR(f->f_locals);
@@ -705,7 +706,9 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
     if (code->co_zombieframe != NULL) {
         f = code->co_zombieframe;
         code->co_zombieframe = NULL;
+	critical_state_alloc_pre(f);
         _Py_NewReference((PyObject *)f);
+	critical_state_alloc_post(f);
         assert(f->f_code == code);
     }
     else {
@@ -741,8 +744,10 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
             if (Py_SIZE(f) < extras) {
 #ifdef Py_PYRONIA
 	        PyObject_GC_SecureDel(f);
+		critical_state_alloc_pre(NULL);
                 f = PyObject_GC_NewSecureVar(PyFrameObject, &PyFrame_Type,
 					     extras);
+		critical_state_alloc_post(NULL);
 #else
 		f = PyObject_GC_Resize(PyFrameObject, f, extras);
 #endif
@@ -751,9 +756,12 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
                     return NULL;
                 }
             }
+	    critical_state_alloc_pre(f);
             _Py_NewReference((PyObject *)f);
+	    critical_state_alloc_post(f);
         }
 
+	critical_state_alloc_pre(f);
         f->f_code = code;
         extras = code->co_nlocals + ncells + nfrees;
         f->f_valuestack = f->f_localsplus + extras;
@@ -762,10 +770,14 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
         f->f_locals = NULL;
         f->f_trace = NULL;
         f->f_exc_type = f->f_exc_value = f->f_exc_traceback = NULL;
+	critical_state_alloc_post(f);
     }
+    critical_state_alloc_pre(f);
     f->f_stacktop = f->f_valuestack;
     f->f_builtins = builtins;
+    critical_state_alloc_pre(back);
     Py_XINCREF(back);
+    critical_state_alloc_post(back);
     f->f_back = back;
     Py_INCREF(code);
     Py_INCREF(globals);
@@ -775,7 +787,14 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
         (CO_NEWLOCALS | CO_OPTIMIZED))
         ; /* f_locals = NULL; will be set by PyFrame_FastToLocals() */
     else if (code->co_flags & CO_NEWLOCALS) {
-        locals = PyDict_New();
+#ifdef Py_PYRONIA
+        if (pyr_is_interpreter_build())
+	  locals = PyDict_New();
+	else
+	  locals = PyDict_ProtectedNew();
+#else
+	locals = PyDict_New();
+#endif
         if (locals == NULL) {
             Py_DECREF(f);
             return NULL;
@@ -801,6 +820,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
     pyrlog("[%s] Allocated frame at %p for module: %s\n", __func__, f, module_name);
     
     _PyObject_GC_TRACK(f);
+    critical_state_alloc_post(f);
     return f;
 }
 
@@ -812,10 +832,12 @@ PyFrame_BlockSetup(PyFrameObject *f, int type, int handler, int level)
     PyTryBlock *b;
     if (f->f_iblock >= CO_MAXBLOCKS)
         Py_FatalError("XXX block stack overflow");
+    critical_state_alloc_pre(f);
     b = &f->f_blockstack[f->f_iblock++];
     b->b_type = type;
     b->b_level = level;
     b->b_handler = handler;
+    critical_state_alloc_post(f);
 }
 
 PyTryBlock *
@@ -824,7 +846,9 @@ PyFrame_BlockPop(PyFrameObject *f)
     PyTryBlock *b;
     if (f->f_iblock <= 0)
         Py_FatalError("XXX block stack underflow");
+    critical_state_alloc_pre(f);
     b = &f->f_blockstack[--f->f_iblock];
+    critical_state_alloc_post(f);
     return b;
 }
 
@@ -938,7 +962,18 @@ PyFrame_FastToLocals(PyFrameObject *f)
         return;
     locals = f->f_locals;
     if (locals == NULL) {
-        locals = f->f_locals = PyDict_New();
+#ifdef Py_PYRONIA
+        if (pyr_is_interpreter_build()) {
+	  locals = f->f_locals = PyDict_New();
+	}
+	else {
+	  critical_state_alloc_pre(NULL);
+	  locals = f->f_locals = PyDict_ProtectedNew();
+	  critical_state_alloc_post(NULL);
+	}
+#else
+	locals = f->f_locals = PyDict_New();
+#endif
         if (locals == NULL) {
             PyErr_Clear(); /* Can't report it :-( */
             return;
@@ -953,6 +988,7 @@ PyFrame_FastToLocals(PyFrameObject *f)
     j = PyTuple_GET_SIZE(map);
     if (j > co->co_nlocals)
         j = co->co_nlocals;
+    PyDict_ProtectedWrite(locals, 1);
     if (co->co_nlocals)
         map_to_dict(map, j, locals, fast, 0);
     ncells = PyTuple_GET_SIZE(co->co_cellvars);
@@ -973,6 +1009,7 @@ PyFrame_FastToLocals(PyFrameObject *f)
                         locals, fast + co->co_nlocals + ncells, 1);
         }
     }
+    PyDict_ProtectedWrite(locals, 1);
     PyErr_Restore(error_type, error_value, error_traceback);
 }
 
