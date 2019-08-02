@@ -84,6 +84,7 @@ struct _dictobject {
      * setitem calls.
      */
     PyDictEntry *ma_table;
+    int ma_table_protected;
     PyDictEntry *(*ma_lookup)(PyDictObject *mp, PyObject *key, long hash);
     PyDictEntry ma_smalltable[PyDict_MINSIZE];
 };

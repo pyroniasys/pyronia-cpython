@@ -269,11 +269,25 @@ gc_list_move(PyGC_Head *node, PyGC_Head *list)
     PyGC_Head *current_prev = node->gc.gc_prev;
     PyGC_Head *current_next = node->gc.gc_next;
     /* Unlink from current list. */
+    if (current_prev->gc.pyr_protected)
+      critical_state_alloc_pre(current_prev);
+
     current_prev->gc.gc_next = current_next;
+
+    if (current_next->gc.pyr_protected)
+      critical_state_alloc_pre(current_next);    
     current_next->gc.gc_prev = current_prev;
+    if (current_next->gc.pyr_protected)
+      critical_state_alloc_post(current_next);
     /* Relink at end of new list. */
     new_prev = node->gc.gc_prev = list->gc.gc_prev;
+    if (current_prev->gc.pyr_protected)
+      critical_state_alloc_post(current_prev);
+    if (new_prev->gc.pyr_protected)
+      critical_state_alloc_pre(new_prev); 
     new_prev->gc.gc_next = list->gc.gc_prev = node;
+    if (new_prev->gc.pyr_protected)
+      critical_state_alloc_post(new_prev); 
     node->gc.gc_next = list;
 }
 
@@ -286,7 +300,9 @@ gc_list_merge(PyGC_Head *from, PyGC_Head *to)
     if (!gc_list_is_empty(from)) {
         tail = to->gc.gc_prev;
         tail->gc.gc_next = from->gc.gc_next;
+	critical_state_alloc_pre(tail->gc.gc_next);
         tail->gc.gc_next->gc.gc_prev = tail;
+	critical_state_alloc_pre(tail->gc.gc_next);
         to->gc.gc_prev = from->gc.gc_prev;
         to->gc.gc_prev->gc.gc_next = to;
     }
@@ -335,9 +351,9 @@ update_refs(PyGC_Head *containers)
     PyGC_Head *gc = containers->gc.gc_next;
     for (; gc != containers; gc = gc->gc.gc_next) {
         assert(gc->gc.gc_refs == GC_REACHABLE);
-	critical_state_alloc_pre(gc->gc.gc_refs);
+	critical_state_alloc_pre(gc);
         gc->gc.gc_refs = Py_REFCNT(FROM_GC(gc));
-	critical_state_alloc_post(gc->gc.gc_refs);
+	critical_state_alloc_post(gc); 
         /* Python's cyclic gc should never see an incoming refcount
          * of 0:  if something decref'ed to 0, it should have been
          * deallocated immediately at that time.
@@ -372,8 +388,13 @@ visit_decref(PyObject *op, void *data)
          * because only they have positive gc_refs.
          */
         assert(gc->gc.gc_refs != 0); /* else refcount was too small */
-        if (gc->gc.gc_refs > 0)
-            gc->gc.gc_refs--;
+        if (gc->gc.gc_refs > 0) {
+	  if (gc->gc.pyr_protected)
+	    critical_state_alloc_pre(gc);
+	  gc->gc.gc_refs--;
+	  if (gc->gc.pyr_protected)
+	    critical_state_alloc_post(gc);
+	}
     }
     return 0;
 }
@@ -404,6 +425,8 @@ visit_reachable(PyObject *op, PyGC_Head *reachable)
         PyGC_Head *gc = AS_GC(op);
         const Py_ssize_t gc_refs = gc->gc.gc_refs;
 
+	if (gc->gc.pyr_protected == 1)
+	  critical_state_alloc_pre(gc);
         if (gc_refs == 0) {
             /* This is in move_unreachable's 'young' list, but
              * the traversal hasn't yet gotten to it.  All
@@ -418,7 +441,7 @@ visit_reachable(PyObject *op, PyGC_Head *reachable)
              * Move it back to move_unreachable's 'young' list,
              * and move_unreachable will eventually get to it
              * again.
-             */
+             */	    
             gc_list_move(gc, reachable);
             gc->gc.gc_refs = 1;
         }
@@ -434,7 +457,9 @@ visit_reachable(PyObject *op, PyGC_Head *reachable)
             assert(gc_refs > 0
                    || gc_refs == GC_REACHABLE
                    || gc_refs == GC_UNTRACKED);
-         }
+         }	
+	if (gc->gc.pyr_protected == 1)
+	  critical_state_alloc_post(gc);
     }
     return 0;
 }
@@ -476,9 +501,11 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
             PyObject *op = FROM_GC(gc);
             traverseproc traverse = Py_TYPE(op)->tp_traverse;
             assert(gc->gc.gc_refs > 0);
-	    critical_state_alloc_pre(gc->gc.gc_refs);
+	    if (gc->gc.pyr_protected)
+	      critical_state_alloc_pre(gc); 
             gc->gc.gc_refs = GC_REACHABLE;
-	    critical_state_alloc_post(gc->gc.gc_refs);
+	    if (gc->gc.pyr_protected)
+	      critical_state_alloc_post(gc); 
             (void) traverse(op,
                             (visitproc)visit_reachable,
                             (void *)young);
@@ -498,10 +525,12 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
              * young if that's so, and we'll see it again.
              */
             next = gc->gc.gc_next;
-	    critical_state_alloc_pre(gc);
+	    if (gc->gc.pyr_protected)
+	      critical_state_alloc_pre(gc); 
             gc_list_move(gc, unreachable);
             gc->gc.gc_refs = GC_TENTATIVELY_UNREACHABLE;
-	    critical_state_alloc_post(gc);
+	    if (gc->gc.pyr_protected)
+	      critical_state_alloc_post(gc); 
         }
         gc = next;
     }
@@ -1515,6 +1544,7 @@ _PyObject_GC_Malloc(size_t basicsize)
     if (g == NULL)
         return PyErr_NoMemory();
     g->gc.gc_refs = GC_UNTRACKED;
+    g->gc.pyr_protected = 0;
     generations[0].count++; /* number of allocated GC objects */
     if (generations[0].count > generations[0].threshold &&
         enabled &&
@@ -1542,6 +1572,10 @@ _PyObject_GC_SecureMalloc(size_t basicsize)
       g = (PyGC_Head *)PyObject_MALLOC(
 				       sizeof(PyGC_Head) + basicsize);
       pyrlog("[%s] Could not allocate %lu bytes in interp dom: %p\n", __func__, basicsize, g);
+      g->gc.pyr_protected = 0;
+    }
+    else if (g) {
+      g->gc.pyr_protected = 1;
     }
     if (g == NULL)
         return PyErr_NoMemory();
@@ -1580,6 +1614,15 @@ _PyObject_GC_NewVar(PyTypeObject *tp, Py_ssize_t nitems)
     PyVarObject *op = (PyVarObject *) _PyObject_GC_Malloc(size);
     if (op != NULL)
         op = PyObject_INIT_VAR(op, tp, nitems);
+    return op;
+}
+
+PyObject *
+_PyObject_GC_NewSecure(PyTypeObject *tp)
+{
+    PyObject *op = _PyObject_GC_SecureMalloc(_PyObject_SIZE(tp));
+    if (op != NULL)
+        op = PyObject_INIT(op, tp);
     return op;
 }
 
@@ -1634,12 +1677,15 @@ PyObject_GC_SecureDel(void *op)
     // Pyronia hook: free an object with memdom_free
     // if it's been allocated in any memory domain
     int freed = 0;
-    critical_state_alloc_pre(g);
-    freed = pyr_free_critical_state(g);
-    critical_state_alloc_post(g);
-
-    if (!freed)
+    if (g->gc.pyr_protected) {
+      critical_state_alloc_pre(g);
+      freed = pyr_free_critical_state(g);
+      g->gc.pyr_protected = 0;
+      critical_state_alloc_post(g);
+    }
+    else {
       PyObject_FREE(g);
+    }
 }
 
 /* for binary compatibility with 2.2 */

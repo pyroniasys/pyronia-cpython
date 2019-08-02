@@ -354,8 +354,12 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_filename);
     Py_XDECREF(co->co_name);
     Py_XDECREF(co->co_lnotab);
-    if (co->co_zombieframe != NULL)
+    if (co->co_zombieframe != NULL) {
+      PyObject *oldz = (PyObject *)co->co_zombieframe;
+        critical_state_alloc_pre(oldz);
         PyObject_GC_SecureDel(co->co_zombieframe);
+	critical_state_alloc_pre(oldz);
+    }
     if (co->co_weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject*)co);
     PyObject_DEL(co);

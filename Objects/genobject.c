@@ -82,7 +82,9 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
      * necessarily their creator. */
     critical_state_alloc_pre(f);
     f->f_tstate = tstate;
+    critical_state_alloc_pre(tstate->frame);
     Py_XINCREF(tstate->frame);
+    critical_state_alloc_post(tstate->frame);
     assert(f->f_back == NULL);
     f->f_back = tstate->frame;
     critical_state_alloc_post(f);
@@ -99,7 +101,6 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
     Py_CLEAR(f->f_back);
     /* Clear the borrowed reference to the thread state */
     f->f_tstate = NULL;
-    critical_state_alloc_post(f);
 
     /* If the generator just returned (as opposed to yielding), signal
      * that the generator is exhausted. */
@@ -114,8 +115,11 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
     if (!result || f->f_stacktop == NULL) {
         /* generator can't be rerun, so release the frame */
         Py_DECREF(f);
+	critical_state_alloc_pre(gen->gi_frame);
         gen->gi_frame = NULL;
+	critical_state_alloc_post(gen->gi_frame);
     }
+    critical_state_alloc_post(f);
 
     return result;
 }

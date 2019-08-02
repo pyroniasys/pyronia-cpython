@@ -8,6 +8,7 @@
 #include "structmember.h"
 #include "osdefs.h"
 #include "traceback.h"
+#include "pyronia_python.h"
 
 #define OFF(x) offsetof(PyTracebackObject, x)
 
@@ -25,7 +26,9 @@ tb_dealloc(PyTracebackObject *tb)
     PyObject_GC_UnTrack(tb);
     Py_TRASHCAN_SAFE_BEGIN(tb)
     Py_XDECREF(tb->tb_next);
+    critical_state_alloc_pre(tb->tb_frame);
     Py_XDECREF(tb->tb_frame);
+    critical_state_alloc_post(tb->tb_frame);
     PyObject_GC_Del(tb);
     Py_TRASHCAN_SAFE_END(tb)
 }
