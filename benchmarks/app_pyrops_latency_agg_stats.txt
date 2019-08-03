@@ -1,0 +1,308 @@
+{
+    "alloc": {
+        "hello": {
+            "min": "4.92",
+            "mean": "5.10",
+            "median": "5.02",
+            "max": "6.02",
+            "stddev": "0.28",
+            "median num": "187.00"
+        },
+        "twitterPhoto": {
+            "min": "7.13",
+            "mean": "7.32",
+            "median": "7.29",
+            "max": "7.67",
+            "stddev": "0.15",
+            "median num": "2109.00"
+        },
+        "alexa": {
+            "min": "6.52",
+            "mean": "6.81",
+            "median": "6.72",
+            "max": "7.38",
+            "stddev": "0.23",
+            "median num": "1367.00"
+        },
+        "plant_watering": {
+            "min": "6.70",
+            "mean": "7.46",
+            "median": "7.50",
+            "max": "8.02",
+            "stddev": "0.26",
+            "median num": "539.00"
+        }
+    },
+    "free": {
+        "hello": {
+            "min": "0.18",
+            "mean": "0.19",
+            "median": "0.19",
+            "max": "0.21",
+            "stddev": "0.01",
+            "median num": "18786.00"
+        },
+        "twitterPhoto": {
+            "min": "0.21",
+            "mean": "0.22",
+            "median": "0.22",
+            "max": "0.24",
+            "stddev": "0.01",
+            "median num": "316314.00"
+        },
+        "alexa": {
+            "min": "0.21",
+            "mean": "0.22",
+            "median": "0.22",
+            "max": "0.23",
+            "stddev": "0.01",
+            "median num": "220950.00"
+        },
+        "plant_watering": {
+            "min": "0.25",
+            "mean": "0.27",
+            "median": "0.27",
+            "max": "0.29",
+            "stddev": "0.01",
+            "median num": "61260.00"
+        }
+    },
+    "grant": {
+        "hello": {
+            "min": "0.18",
+            "mean": "0.18",
+            "median": "0.18",
+            "max": "0.21",
+            "stddev": "0.01",
+            "median num": "147020.00"
+        },
+        "twitterPhoto": {
+            "min": "0.19",
+            "mean": "0.20",
+            "median": "0.19",
+            "max": "0.21",
+            "stddev": "0.01",
+            "median num": "10688031.00"
+        },
+        "alexa": {
+            "min": "0.19",
+            "mean": "0.19",
+            "median": "0.19",
+            "max": "0.20",
+            "stddev": "0.00",
+            "median num": "9322466.00"
+        },
+        "plant_watering": {
+            "min": "0.20",
+            "mean": "0.21",
+            "median": "0.21",
+            "max": "0.23",
+            "stddev": "0.01",
+            "median num": "1033895.00"
+        }
+    },
+    "revoke": {
+        "hello": {
+            "min": "0.18",
+            "mean": "0.18",
+            "median": "0.18",
+            "max": "0.21",
+            "stddev": "0.01",
+            "median num": "145224.00"
+        },
+        "twitterPhoto": {
+            "min": "0.19",
+            "mean": "0.20",
+            "median": "0.19",
+            "max": "0.21",
+            "stddev": "0.01",
+            "median num": "10402367.00"
+        },
+        "alexa": {
+            "min": "0.18",
+            "mean": "0.19",
+            "median": "0.19",
+            "max": "0.20",
+            "stddev": "0.00",
+            "median num": "9073008.00"
+        },
+        "plant_watering": {
+            "min": "0.19",
+            "mean": "0.21",
+            "median": "0.21",
+            "max": "0.23",
+            "stddev": "0.01",
+            "median num": "1001840.00"
+        }
+    },
+    "priv_add": {
+        "hello": {
+            "min": "9.03",
+            "mean": "9.58",
+            "median": "9.26",
+            "max": "12.43",
+            "stddev": "0.86",
+            "median num": "26.00"
+        },
+        "twitterPhoto": {
+            "min": "8.81",
+            "mean": "9.50",
+            "median": "9.04",
+            "max": "14.44",
+            "stddev": "1.28",
+            "median num": "26.00"
+        },
+        "alexa": {
+            "min": "10.87",
+            "mean": "12.68",
+            "median": "12.41",
+            "max": "17.68",
+            "stddev": "1.54",
+            "median num": "26.00"
+        },
+        "plant_watering": {
+            "min": "9.08",
+            "mean": "15.82",
+            "median": "15.86",
+            "max": "20.08",
+            "stddev": "2.06",
+            "median num": "26.00"
+        }
+    },
+    "priv_del": {
+        "hello": {
+            "min": "9.28",
+            "mean": "9.78",
+            "median": "9.42",
+            "max": "12.33",
+            "stddev": "0.78",
+            "median num": "26.00"
+        },
+        "twitterPhoto": {
+            "min": "9.04",
+            "mean": "9.80",
+            "median": "9.27",
+            "max": "14.64",
+            "stddev": "1.53",
+            "median num": "26.00"
+        },
+        "alexa": {
+            "min": "11.06",
+            "mean": "12.74",
+            "median": "12.63",
+            "max": "18.00",
+            "stddev": "1.27",
+            "median num": "26.00"
+        },
+        "plant_watering": {
+            "min": "9.29",
+            "mean": "16.43",
+            "median": "16.17",
+            "max": "25.13",
+            "stddev": "2.81",
+            "median num": "26.00"
+        }
+    },
+    "new_page": {
+        "hello": {
+            "min": "50.40",
+            "mean": "52.13",
+            "median": "51.33",
+            "max": "61.92",
+            "stddev": "2.86",
+            "median num": "16.00"
+        },
+        "twitterPhoto": {
+            "min": "57.68",
+            "mean": "59.73",
+            "median": "59.32",
+            "max": "62.82",
+            "stddev": "1.36",
+            "median num": "227.00"
+        },
+        "alexa": {
+            "min": "56.25",
+            "mean": "58.77",
+            "median": "58.06",
+            "max": "63.48",
+            "stddev": "1.96",
+            "median num": "139.00"
+        },
+        "plant_watering": {
+            "min": "61.47",
+            "mean": "67.93",
+            "median": "68.18",
+            "max": "73.93",
+            "stddev": "2.45",
+            "median num": "52.00"
+        }
+    },
+    "callstack_gen": {
+        "hello": {
+            "min": "0.38",
+            "mean": "0.47",
+            "median": "0.47",
+            "max": "0.56",
+            "stddev": "0.05",
+            "median num": "1.00"
+        },
+        "twitterPhoto": {
+            "min": "8.58",
+            "mean": "14.53",
+            "median": "18.08",
+            "max": "22.04",
+            "stddev": "4.92",
+            "median num": "11.00"
+        },
+        "alexa": {
+            "min": "10.45",
+            "mean": "16.34",
+            "median": "20.06",
+            "max": "23.28",
+            "stddev": "5.30",
+            "median num": "9.00"
+        },
+        "plant_watering": {
+            "min": "5.45",
+            "mean": "7.72",
+            "median": "6.10",
+            "max": "14.87",
+            "stddev": "2.54",
+            "median num": "3.00"
+        }
+    },
+    "callstack_hash": {
+        "hello": {
+            "min": "0.00",
+            "mean": "0.00",
+            "median": "0.00",
+            "max": "0.00",
+            "stddev": "0.00",
+            "median num": "0.00"
+        },
+        "twitterPhoto": {
+            "min": "20.39",
+            "mean": "23.06",
+            "median": "21.88",
+            "max": "31.75",
+            "stddev": "3.29",
+            "median num": "2.00"
+        },
+        "alexa": {
+            "min": "17.05",
+            "mean": "18.56",
+            "median": "17.63",
+            "max": "28.55",
+            "stddev": "2.61",
+            "median num": "4.00"
+        },
+        "plant_watering": {
+            "min": "16.28",
+            "mean": "17.13",
+            "median": "16.77",
+            "max": "26.45",
+            "stddev": "1.96",
+            "median num": "2.00"
+        }
+    }
+}
