@@ -2,6 +2,7 @@
 /* Tuple object implementation */
 
 #include "Python.h"
+#include "../Python/pyronia_python.h"
 
 /* Speed optimization to avoid frequent malloc/free of small tuples */
 #ifndef PyTuple_MAXSAVESIZE
@@ -218,8 +219,11 @@ tupledealloc(register PyTupleObject *op)
     Py_TRASHCAN_SAFE_BEGIN(op)
     if (len > 0) {
         i = len;
-        while (--i >= 0)
+        while (--i >= 0) {
+	    critical_state_alloc_pre(op->ob_item[i]);
             Py_XDECREF(op->ob_item[i]);
+	    critical_state_alloc_post(op->ob_item[i]);
+	}
 #if PyTuple_MAXSAVESIZE > 0
         if (len < PyTuple_MAXSAVESIZE &&
             numfree[len] < PyTuple_MAXFREELIST &&

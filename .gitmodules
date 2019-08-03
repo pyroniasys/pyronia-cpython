@@ -1,3 +1,0 @@
-[submodule "RIPE"]
-	path = RIPE
-	url = git@github.com:masomel/RIPE.git

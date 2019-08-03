@@ -1523,10 +1523,12 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     }
     if (dict != NULL) {
         Py_INCREF(dict);
+	PyDict_ProtectedWrite(dict, 1);
         if (value == NULL)
             res = PyDict_DelItem(dict, name);
         else
             res = PyDict_SetItem(dict, name, value);
+	PyDict_ProtectedWrite(dict, 0);
         if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
             PyErr_SetObject(PyExc_AttributeError, name);
         Py_DECREF(dict);

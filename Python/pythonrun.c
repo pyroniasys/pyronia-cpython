@@ -261,6 +261,7 @@ Py_InitializeEx(int install_sigs)
     interp->builtins = PyModule_GetDict(bimod);
     if (interp->builtins == NULL)
         Py_FatalError("Py_Initialize: can't initialize builtins dict");
+
     Py_INCREF(interp->builtins);
 
     sysmod = _PySys_Init();

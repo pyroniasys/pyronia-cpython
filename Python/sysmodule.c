@@ -837,7 +837,9 @@ sys_getframe(PyObject *self, PyObject *args)
                         "call stack is not deep enough");
         return NULL;
     }
+    critical_state_alloc_pre(f);
     Py_INCREF(f);
+    critical_state_alloc_post(f);
     return (PyObject*)f;
 }
 
