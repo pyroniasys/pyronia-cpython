@@ -14,7 +14,7 @@ def calc_multi(new, orig):
 
 app_path = '/home/marcela/Research/lib-isolation/cpython'
 
-apps = ['hello', 'alexa', 'plant_watering', 'twitterPhoto']
+apps = ['alexa', 'plant_watering', 'twitterPhoto']
 
 bench_types = ['e2e-latency', 'syscall-latency', 'iter-latency']
 
@@ -40,7 +40,7 @@ for bt in bench_types:
             pyr_mean = float(pyr_data[a]['mean'][0])/1000000.0
             nopyr_mean = float(nopyr_data[a]['mean'][0])/1000000.0
 
-            overheads['mean e2e latency overhead'][a] = ("%.2f seconds (%.1fx)" % (calc_diff(pyr_mean, nopyr_mean), calc_multi(pyr_mean, nopyr_mean)))
+            overheads['mean e2e latency overhead'][a] = ("%.2f seconds (%.1fx)" % (pyr_mean, calc_multi(pyr_mean, nopyr_mean)))
     elif bt == 'syscall-latency':
         overheads['mean syscall latency overhead']['open'] = OrderedDict()
         overheads['mean syscall latency overhead']['fopen'] = OrderedDict()
@@ -50,14 +50,16 @@ for bt in bench_types:
                 pyr_mean = float(pyr_data[a][s]['stats']['mean'])
                 nopyr_mean = float(nopyr_data[a][s]['stats']['mean'])
                 if nopyr_mean > 0.0:
-                    overheads['mean syscall latency overhead'][s][a] = ("%.1f%% (%.2f us)" % (calc_percent(pyr_mean, nopyr_mean), calc_diff(pyr_mean, nopyr_mean)))
+                    overheads['mean syscall latency overhead'][s][a] = ("%.1fx (%.2f us)" % (calc_multi(pyr_mean, nopyr_mean), calc_diff(pyr_mean, nopyr_mean)))
     elif bt == 'iter-latency':
-        for a in apps[1:]:
+        for a in apps:
             pyr_mean = [float(t) for t in pyr_data[a]['mean']]
+            pyr_first = pyr_mean[0]
             pyr_mean = mean(pyr_mean[5:])
             nopyr_mean = [float(t) for t in nopyr_data[a]['mean']]
+            nopyr_first = nopyr_mean[0]
             nopyr_mean = mean(nopyr_mean[5:])
-            overheads['mean per-iter latency overhead'][a] = ("%.2f seconds (%.1fx)" % (calc_diff(pyr_mean, nopyr_mean), calc_multi(pyr_mean, nopyr_mean)))
+            overheads['mean per-iter latency overhead'][a] = ("First iter %.1fx, avg iter %.2f ms (%.1fx)" % (calc_multi(pyr_first, nopyr_first), pyr_mean, calc_multi(pyr_mean, nopyr_mean)))
 
 out = open(app_path+'/benchmarks/pyronia_overheads.txt', 'w+')
 json.dump(overheads, out, indent=4)

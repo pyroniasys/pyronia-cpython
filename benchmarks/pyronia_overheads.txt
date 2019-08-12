@@ -1,31 +1,29 @@
 {
     "mean e2e latency overhead": {
-        "hello": "0.02 seconds (2.0x)", 
-        "alexa": "0.98 seconds (5.0x)", 
-        "plant_watering": "0.15 seconds (2.0x)", 
-        "twitterPhoto": "1.18 seconds (5.0x)"
-    }, 
+        "alexa": "1.21 seconds (5.0x)",
+        "plant_watering": "0.22 seconds (2.0x)",
+        "twitterPhoto": "1.46 seconds (5.0x)"
+    },
     "mean syscall latency overhead": {
         "open": {
-            "alexa": "175.9% (15.37 us)", 
-            "plant_watering": "178.5% (15.74 us)", 
-            "twitterPhoto": "191.9% (14.89 us)"
-        }, 
+            "alexa": "2.0x (15.37 us)",
+            "plant_watering": "2.0x (15.74 us)",
+            "twitterPhoto": "2.0x (14.89 us)"
+        },
         "fopen": {
-            "hello": "20.6% (0.71 us)", 
-            "alexa": "10.7% (0.40 us)", 
-            "plant_watering": "2.0% (0.09 us)", 
-            "twitterPhoto": "18.5% (0.62 us)"
-        }, 
+            "alexa": "1.0x (0.40 us)",
+            "plant_watering": "1.0x (0.09 us)",
+            "twitterPhoto": "1.0x (0.62 us)"
+        },
         "connect": {
-            "alexa": "60.1% (40.11 us)", 
-            "plant_watering": "-8.4% (-6.20 us)", 
-            "twitterPhoto": "48.0% (30.90 us)"
+            "alexa": "1.0x (40.11 us)",
+            "plant_watering": "0.0x (-6.20 us)",
+            "twitterPhoto": "1.0x (30.90 us)"
         }
-    }, 
+    },
     "mean per-iter latency overhead": {
-        "alexa": "71304.65 seconds (2.0x)", 
-        "plant_watering": "1769.37 seconds (2.0x)", 
-        "twitterPhoto": "66789.98 seconds (3.0x)"
+        "alexa": "First iter 2.0x, avg iter 113.29 ms (2.0x)",
+        "plant_watering": "First iter 2.0x, avg iter 2.93 ms (3.0x)",
+        "twitterPhoto": "First iter 4.0x, avg iter 97.26 ms (3.0x)"
     }
 }

@@ -1,0 +1,18 @@
+{
+    "hello": {
+        "op": "grant",
+        "num calls": 147020.0
+    },
+    "twitterPhoto": {
+        "op": "grant",
+        "num calls": 10688031.0
+    },
+    "alexa": {
+        "op": "grant",
+        "num calls": 9322466.0
+    },
+    "plant_watering": {
+        "op": "grant",
+        "num calls": 1033895.0
+    }
+}
