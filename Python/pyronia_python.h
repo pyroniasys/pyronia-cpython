@@ -30,8 +30,13 @@ PyThreadState *pyr_interp_tstate;
 void acquire_gil(void);
 void release_gil(void);
 
+PyObject *PyDict_ProtectedNew(void);
+void PyDict_ProtectedWrite(register PyObject *, int);
 PyObject *_PyObject_GC_SecureMalloc(size_t);
+PyObject *_PyObject_GC_NewSecure(PyTypeObject *tp);
 PyVarObject *_PyObject_GC_NewSecureVar(PyTypeObject *, Py_ssize_t);
+#define PyObject_GC_NewSecure(type, typeobj) \
+                ( (type *) _PyObject_GC_NewSecure((typeobj)) )
 #define PyObject_GC_NewSecureVar(type, typeobj, n) \
                 ( (type *) _PyObject_GC_NewSecureVar((typeobj), (n)) )
 void PyObject_GC_SecureDel(void *);

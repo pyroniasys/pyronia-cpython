@@ -25,20 +25,13 @@ for a in apps:
     plt.subplot(len(apps), 1, plot_idx)
     nopyr_times = [float(t) for t in nopyr_data[a]['mean']]
     pyr_times = [float(t) for t in pyr_data[a]['mean']]
-    is_millis = False
-    if min(nopyr_times) > 1000.0:
-        nopyr_times = [t/1000.0 for t in nopyr_times]
-        pyr_times = [t/1000.0 for t in pyr_times]
-        is_millis = True
     color = mem_line_colors[idx % len(mem_line_colors)]
-    plt.plot(ind, pyr_times, color, nopyr_times, color+'--')
+    plt.plot(ind, pyr_times, color+'--', label='+Pyronia')
+    plt.plot(ind, nopyr_times, color, label='app')
+    plt.legend()
     plt.title(a)
     ax.set_yticks(np.arange(int(min(nopyr_times)), int(max(pyr_times)), 5.0))
     ax.set_xticks(np.arange(1.0, 100.0, 1.0))
-    if is_millis == True:
-        plt.ylabel('millisecs')
-    else:
-        plt.ylabel('microsecs')
         # Add some text for labels, title and custom x-axis tick labels, etc.
     #ax.set_yscale('log')
     idx += 1
@@ -50,6 +43,7 @@ fig.add_subplot(111, frameon=False)
 plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
 plt.grid(False)
 plt.xlabel('number of iterations')
+plt.ylabel('time (ms)')
 fig.savefig('apps-iter-latency.pdf')
 
 '''

@@ -5,6 +5,9 @@
 #include "../Python/pyronia_python.h"
 #include <ctype.h>
 
+#ifdef Py_PYRONIA
+#include "frameobject.h"
+#endif
 
 /* Support type attribute cache */
 
@@ -312,6 +315,7 @@ type_module(PyTypeObject *type, void *context)
 static int
 type_set_module(PyTypeObject *type, PyObject *value, void *context)
 {
+    int res = 0;
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         PyErr_Format(PyExc_TypeError,
                      "can't set %s.__module__", type->tp_name);
@@ -325,7 +329,10 @@ type_set_module(PyTypeObject *type, PyObject *value, void *context)
 
     PyType_Modified(type);
 
-    return PyDict_SetItemString(type->tp_dict, "__module__", value);
+    PyDict_ProtectedWrite(type->tp_dict, 1);
+    res = PyDict_SetItemString(type->tp_dict, "__module__", value);
+    PyDict_ProtectedWrite(type->tp_dict, 0);
+    return res;
 }
 
 static PyObject *
@@ -356,11 +363,15 @@ type_set_abstractmethods(PyTypeObject *type, PyObject *value, void *context)
         abstract = PyObject_IsTrue(value);
         if (abstract < 0)
             return -1;
+	PyDict_ProtectedWrite(type->tp_dict, 1);
         res = PyDict_SetItemString(type->tp_dict, "__abstractmethods__", value);
+	PyDict_ProtectedWrite(type->tp_dict, 0);
     }
     else {
         abstract = 0;
+	PyDict_ProtectedWrite(type->tp_dict, 1);
         res = PyDict_DelItemString(type->tp_dict, "__abstractmethods__");
+	PyDict_ProtectedWrite(type->tp_dict, 0);
         if (res && PyErr_ExceptionMatches(PyExc_KeyError)) {
             PyErr_SetString(PyExc_AttributeError, "__abstractmethods__");
             return -1;
@@ -2093,7 +2104,7 @@ type_init(PyObject *cls, PyObject *args, PyObject *kwds)
 static PyObject *
 type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 {
-    PyObject *name, *bases, *dict;
+  PyObject *name, *bases, *dict, *olddict;
     static char *kwlist[] = {"name", "bases", "dict", 0};
     PyObject *slots, *tmp, *newslots;
     PyTypeObject *type, *base, *tmptype, *winner;
@@ -2389,12 +2400,16 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     type->tp_base = base;
 
     /* Initialize tp_dict from passed-in dict */
+    olddict = dict;
+    critical_state_alloc_pre(NULL);
     type->tp_dict = dict = PyDict_Copy(dict);
+    critical_state_alloc_post(NULL);
     if (dict == NULL) {
         Py_DECREF(type);
         return NULL;
     }
 
+    PyDict_ProtectedWrite(dict, 1);
     /* Set __module__ in the dict */
     if (PyDict_GetItemString(dict, "__module__") == NULL) {
         tmp = PyEval_GetGlobals();
@@ -2444,6 +2459,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
         }
         Py_DECREF(tmp);
     }
+    PyDict_ProtectedWrite(dict, 0);
 
     /* Add descriptors for custom slots from __slots__, or for __dict__ */
     mp = PyHeapType_GET_MEMBERS(et);
@@ -3768,10 +3784,12 @@ add_members(PyTypeObject *type, PyMemberDef *memb)
         descr = PyDescr_NewMember(type, memb);
         if (descr == NULL)
             return -1;
+	PyDict_ProtectedWrite(dict, 1);
         if (PyDict_SetItemString(dict, memb->name, descr) < 0) {
             Py_DECREF(descr);
             return -1;
         }
+	PyDict_ProtectedWrite(dict, 0);
         Py_DECREF(descr);
     }
     return 0;
@@ -3790,10 +3808,12 @@ add_getset(PyTypeObject *type, PyGetSetDef *gsp)
 
         if (descr == NULL)
             return -1;
+	critical_state_alloc_pre(NULL);
         if (PyDict_SetItemString(dict, gsp->name, descr) < 0) {
             Py_DECREF(descr);
             return -1;
         }
+	critical_state_alloc_pre(NULL);
         Py_DECREF(descr);
     }
     return 0;
@@ -4185,12 +4205,24 @@ PyType_Ready(PyTypeObject *type)
     /* Initialize tp_dict */
     dict = type->tp_dict;
     if (dict == NULL) {
+#ifdef Py_PYRONIA
+      if (!pyr_is_interpreter_build() && type == &PyFrame_Type) {
+	critical_state_alloc_pre(NULL);
+	dict = PyDict_ProtectedNew();
+	critical_state_alloc_post(NULL);
+      }
+      else {
+#endif
         dict = PyDict_New();
-        if (dict == NULL)
-            goto error;
-        type->tp_dict = dict;
+#ifdef Py_PYRONIA
+      }
+#endif
+      if (dict == NULL)
+	goto error;
+      type->tp_dict = dict;
     }
 
+    PyDict_ProtectedWrite(type->tp_dict, 1);
     /* Add type-specific descriptors to tp_dict */
     if (add_operators(type) < 0)
         goto error;
@@ -4206,6 +4238,7 @@ PyType_Ready(PyTypeObject *type)
         if (add_getset(type, type->tp_getset) < 0)
             goto error;
     }
+    PyDict_ProtectedWrite(type->tp_dict, 0);
 
     /* Calculate method resolution order */
     if (mro_internal(type) < 0) {
@@ -4260,18 +4293,20 @@ PyType_Ready(PyTypeObject *type)
     /* if the type dictionary doesn't contain a __doc__, set it from
        the tp_doc slot.
      */
+    PyDict_ProtectedWrite(type->tp_dict, 1);
     if (PyDict_GetItemString(type->tp_dict, "__doc__") == NULL) {
         if (type->tp_doc != NULL) {
             PyObject *doc = PyString_FromString(type->tp_doc);
             if (doc == NULL)
                 goto error;
             PyDict_SetItemString(type->tp_dict, "__doc__", doc);
-            Py_DECREF(doc);
+	    Py_DECREF(doc);
         } else {
             PyDict_SetItemString(type->tp_dict,
                                  "__doc__", Py_None);
         }
     }
+    PyDict_ProtectedWrite(type->tp_dict, 0);
 
     /* Some more special stuff */
     base = type->tp_base;

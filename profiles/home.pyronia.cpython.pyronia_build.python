@@ -18,6 +18,7 @@
 /dev/pts/* r,
 /usr/lib/locale/locale-archive r,
 /home/pyronia/libpyronia/ r,
+/home/pyronia/libpyronia/src/libpyronia.so rm,
 /home/pyronia/cpython/ r,
 /home/pyronia/cpython/Lib** rwmix,
 /home/pyronia/cpython/pyronia_build/** rm,
@@ -43,11 +44,13 @@
 /home/pyronia/cpython/profiles/home.pyronia.cpython.pyronia_build.python-lib.prof r,
 
 # TODO: replace these with YOUR resource access rules
-include /home/pyronia/cpython/install.prof
+# include /home/pyronia/cpython/install.prof
 
 # include /home/pyronia/libpyronia/apps/hello/hello.prof
-# include /home/pyronia/libpyronia/apps/twitterPhoto/twitterPhoto.prof
+include /home/pyronia/libpyronia/apps/twitterPhoto/twitterPhoto.prof
 # include /home/pyronia/libpyronia/apps/alexa/alexa.prof
 # include /home/pyronia/libpyronia/apps/plant_watering/moisture.prof
 # include /home/pyronia/cpython/microbenchmarks/test_modules/micro.prof
+# include /home/pyronia/cpython/mem-attack.prof
+# include /home/pyronia/cpython/ripe.prof
 }

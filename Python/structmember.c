@@ -4,6 +4,7 @@
 #include "Python.h"
 
 #include "structmember.h"
+#include "pyronia_python.h"
 
 static PyObject *
 listmembers(struct memberlist *mlist)
@@ -115,7 +116,9 @@ PyMember_GetOne(const char *addr, PyMemberDef *l)
         v = *(PyObject **)addr;
         if (v == NULL)
             v = Py_None;
+	critical_state_alloc_pre(v);
         Py_INCREF(v);
+	critical_state_alloc_post(v);
         break;
     case T_OBJECT_EX:
         v = *(PyObject **)addr;

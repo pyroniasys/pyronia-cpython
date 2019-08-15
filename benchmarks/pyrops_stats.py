@@ -49,6 +49,33 @@ for a in apps:
     f.close()
     app_stats[a] = get_ops_latencies(latencies)
 
+app_stats_agg = OrderedDict()
+for o in ops:
+    app_stats_agg[o] = OrderedDict()
+    for a in apps:
+        if o in app_stats[a]:
+            app_stats_agg[o][a] = app_stats[a][o]['stats']
+
+most_calls = OrderedDict()
+for a in apps:
+    app_max = 0.0
+    max_op = ""
+    for o in ops:
+        if float(app_stats_agg[o][a]['median num']) > app_max:
+            app_max = float(app_stats_agg[o][a]['median num'])
+            max_op = o
+    most_calls[a] = OrderedDict()
+    most_calls[a]['op'] = max_op
+    most_calls[a]['num calls'] = app_max
+
 out = open(app_path+'/benchmarks/app_pyrops_latency_stats.txt', 'w+')
 json.dump(app_stats, out, indent=4)
+out.close()
+
+out = open(app_path+'/benchmarks/app_pyrops_latency_agg_stats.txt', 'w+')
+json.dump(app_stats_agg, out, indent=4)
+out.close()
+
+out = open(app_path+'/benchmarks/app_pyrops_latency_max.txt', 'w+')
+json.dump(most_calls, out, indent=4)
 out.close()

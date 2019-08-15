@@ -68,7 +68,7 @@ def get_iters_latency_stats(latencies):
     for l in latencies:
         run_data = l.split(' ')
         for i in range(0, len(run_data)):
-            iter_times[str(i)].append(float(run_data[i].strip())*1000000.0)
+            iter_times[str(i)].append(float(run_data[i].strip())*1000.0)
             
     iter_means = []
     iter_medians = []
@@ -76,11 +76,11 @@ def get_iters_latency_stats(latencies):
     iter_mins = []
     iter_max = []
     for i,times in iter_times.items():
-        iter_mins.append("%.1f" % min(times))
-        iter_means.append("%.1f" % mean(times))
-        iter_medians.append("%.1f" % median(times))
-        iter_max.append("%.1f" % max(times))
-        iter_stddev.append("%.1f" % stdev(times))
+        iter_mins.append("%.4f" % min(times))
+        iter_means.append("%.4f" % mean(times))
+        iter_medians.append("%.4f" % median(times))
+        iter_max.append("%.4f" % max(times))
+        iter_stddev.append("%.4f" % stdev(times))
             
     stats = OrderedDict()
     stats['min'] = iter_mins
@@ -90,8 +90,8 @@ def get_iters_latency_stats(latencies):
     stats['stddev'] = iter_stddev
     return stats
 
-for d in datasets[:1]:
-    for bt in bench_types[2:]:
+for d in datasets:
+    for bt in bench_types:
         app_stats = OrderedDict()
         for a in apps[1:]:
             f = open(app_path+'/benchmarks/'+a+'/'+a+'-'+bt+'-'+d+'.data', 'r')

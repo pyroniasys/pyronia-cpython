@@ -1,0 +1,3 @@
+/tmp/ripe_log rw,
+/home/pyronia/cpython/RIPE/build/* rm,
+/home/pyronia/cpython/RIPE/python/* rwm,
