@@ -67,5 +67,28 @@
             "max": 54,
             "stddev": 0.0
         }
+    },
+    "twitterPhoto": {
+        "total usage": {
+            "min": 151320,
+            "mean": 154417.6,
+            "median": 155192,
+            "max": 155192,
+            "stddev": 1731.611041775837
+        },
+        "metadata usage": {
+            "min": 54368,
+            "mean": 54387.2,
+            "median": 54368,
+            "max": 54464,
+            "stddev": 42.93250516799596
+        },
+        "num pages": {
+            "min": 176,
+            "mean": 176,
+            "median": 176,
+            "max": 176,
+            "stddev": 0.0
+        }
     }
 }

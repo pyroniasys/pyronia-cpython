@@ -3,6 +3,32 @@ import matplotlib.pyplot as plt
 import json
 from collections import OrderedDict
 
+def autoscale_y(ax,margin=0.1):
+    """This function rescales the y-axis based on the data that is visible given the current xlim of the axis.
+    ax -- a matplotlib axes object
+    margin -- the fraction of the total height of the y-data to pad the upper and lower ylims"""
+
+    def get_bottom_top(line):
+        xd = line.get_xdata()
+        yd = line.get_ydata()
+        lo,hi = ax.get_xlim()
+        y_displayed = yd[((xd>lo) & (xd<hi))]
+        h = np.max(y_displayed) - np.min(y_displayed)
+        bot = np.min(y_displayed)-margin*h
+        top = np.max(y_displayed)+margin*h
+        return bot,top
+
+    lines = ax.get_lines()
+    bot,top = np.inf, -np.inf
+
+    for line in lines:
+        new_bot, new_top = get_bottom_top(line)
+        print(str(new_bot)+" "+str(new_top))
+        if new_bot < bot: bot = new_bot
+        if new_top > top: top = new_top
+
+    ax.set_ylim(bot,top)
+
 nopyr_data = dict()
 pyr_data = dict()
 with open('app_iter-latency-pyr_stats.txt', 'r') as fp:
@@ -26,13 +52,19 @@ for a in apps:
     nopyr_times = [float(t) for t in nopyr_data[a]['mean']]
     pyr_times = [float(t) for t in pyr_data[a]['mean']]
     color = mem_line_colors[idx % len(mem_line_colors)]
+    ax = plt.gca()
+    ax.set_xticks(np.arange(0, 101, 10))
+    ax.set_xlim([0,101])
+    if int(max(pyr_times)) < 100:
+        top_marg = 1
+    else:
+        top_marg = 5
+    ax.set_ylim([0, int(max(pyr_times))+top_marg])
     plt.plot(ind, pyr_times, color+'--', label='+Pyronia')
     plt.plot(ind, nopyr_times, color, label='app')
-    plt.legend()
+    plt.legend(loc='center right')
     plt.title(a)
-    ax.set_yticks(np.arange(int(min(nopyr_times)), int(max(pyr_times)), 5.0))
-    ax.set_xticks(np.arange(1.0, 100.0, 1.0))
-        # Add some text for labels, title and custom x-axis tick labels, etc.
+    # Add some text for labels, title and custom x-axis tick labels, etc.
     #ax.set_yscale('log')
     idx += 1
     plot_idx += 1
