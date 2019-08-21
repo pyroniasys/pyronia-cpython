@@ -13,7 +13,7 @@ runs = 25
 
 app_stats = OrderedDict()
 
-for a in apps[:3]:
+for a in apps:
     num_memdoms = []
     total_allocs = []
     total_metadata_allocs = []
