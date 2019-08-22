@@ -45,6 +45,7 @@ fig, ax = plt.subplots()
 mem_line_colors = ("k", "b", "r", "g", "c", "m", "y")
 
 # gather pyr and no_pyr lists
+lgd = None
 idx = 0
 plot_idx = 1
 for a in apps:
@@ -62,7 +63,9 @@ for a in apps:
     ax.set_ylim([0, int(max(pyr_times))+top_marg])
     plt.plot(ind, pyr_times, color+'--', label='+Pyronia')
     plt.plot(ind, nopyr_times, color, label='app')
-    plt.legend(loc='center right')
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width*0.8, box.height])
+    lgd = ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.title(a)
     # Add some text for labels, title and custom x-axis tick labels, etc.
     #ax.set_yscale('log')
@@ -76,7 +79,7 @@ plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=Fa
 plt.grid(False)
 plt.xlabel('number of iterations')
 plt.ylabel('time (ms)')
-fig.savefig('apps-iter-latency.pdf')
+fig.savefig('apps-iter-latency.pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
 
 '''
 def autolabel(rects, xpos='center'):
