@@ -1,0 +1,15 @@
+{
+    "plant_watering": {
+        "nopyr": 15.539062,
+        "pyr": 26.417969,
+        "overhead": "70.01 %"
+    },
+    "twitterPhoto": {
+        "nopyr": 36.222656,
+        "pyr": 40.898438,
+        "overhead": "12.91 %"
+    },
+    "alexa": {
+        "nopyr": 25.496094
+    }
+}
