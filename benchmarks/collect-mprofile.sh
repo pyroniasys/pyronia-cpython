@@ -1,6 +1,6 @@
 #!/bin/bash
 
-runs=2
+runs=5
 
 if [ $# -ne 1 ]; then
     echo 'Usage: ./collect-mprofile.sh <benchmark type>'
@@ -16,9 +16,9 @@ lib_prof_temp='/home/pyronia/cpython/profiles/home.pyronia.cpython.pyronia_build
 for a in $apps; do
     cp $lib_prof_temp'.'$a $lib_prof_temp
     /home/pyronia/cpython/load_python_profile
-    x=1
+    x=4
     while [ $x -le $runs ]; do
-        mprof run --include-children -o $a'/'$a'-mprofile-'$x'-'$bench_type'.data' /home/pyronia/cpython/run_pyr_python.sh $apps_path'/'$a'/'$a'.py'
+        mprof run --include-children -o $a'/'$a'-mprofile-'$x'-'$bench_type'.data' /home/pyronia/cpython/pyronia_build/python $apps_path'/'$a'/'$a'.py'
         echo "Finished run $x for app $a"
 	x=$(($x+1))
     done
