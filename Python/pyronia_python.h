@@ -45,7 +45,10 @@ void PyObject_GC_SecureDel(void *);
 // to enable toggling pyronia on and off (and so we don't need to import pyronia_lib.h directly anywhere but here)
 #ifdef Py_PYRONIA
 #define critical_state_alloc_pre(op)  \
-  ( pyr_grant_critical_state_write((void *)op) )
+    do {                                        \
+        pyrlog("Accessing %p\n", op);           \
+        pyr_enter_trusted_interpreter_context(); \
+    } while(0)
 #else
 #define critical_state_alloc_pre(op) \
     do { } while(0)
@@ -53,7 +56,10 @@ void PyObject_GC_SecureDel(void *);
 
 #ifdef Py_PYRONIA
 #define critical_state_alloc_post(op) \
-  ( pyr_revoke_critical_state_write((void *)op) )
+    do {                                        \
+        pyrlog("Accessing %p\n", op);            \
+        pyr_exit_trusted_interpreter_context(); \
+    } while(0)
 #else
 #define critical_state_alloc_post(op) \
     do { } while(0)
